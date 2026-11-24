@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | {{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4 antialiased relative overflow-x-hidden">
+
+    <!-- Background glowing decorative orbs -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="w-full max-w-lg relative z-10 my-8">
+        <!-- Brand Header -->
+        <div class="text-center mb-6">
+            <div class="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 items-center justify-center text-white shadow-xl shadow-teal-500/20 mb-3 border border-white/20">
+                <i data-lucide="cross" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</h1>
+            <p class="text-xs text-teal-400 font-semibold tracking-wider uppercase mt-1">Hospital & Clinical Management System</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/50 space-y-6">
+            <div>
+                <h2 class="text-xl font-bold text-white tracking-tight">Staff & Patient Sign In</h2>
+                <p class="text-xs text-slate-400 mt-1">Authenticate to access clinical records, consultations, operations, and patient services.</p>
+            </div>
+
+            <!-- Patient Portal Quick Switch Banner -->
+            <div class="p-3 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2 text-teal-300 font-semibold">
+                    <i data-lucide="heart-pulse" class="w-4 h-4 text-teal-400"></i>
+                    <span>Visiting as a Patient?</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'portal:register' %}" class="px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition text-[11px] shadow-sm shadow-teal-500/20">
+                        Register Online
+                    </a>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            {% if messages %}
+            <div class="space-y-2">
+                {% for message in messages %}
+                <div class="p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 {% if message.tags == 'error' %}bg-rose-500/15 border border-rose-500/30 text-rose-300{% elif message.tags == 'warning' %}bg-amber-500/15 border border-amber-500/30 text-amber-300{% else %}bg-teal-500/15 border border-teal-500/30 text-teal-300{% endif %}">
+                    <i data-lucide="{% if message.tags == 'error' %}alert-circle{% elif message.tags == 'warning' %}alert-triangle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form method="POST" action="{% url 'accounts:login' %}" class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username, Email, Mobile No., or Patient ID</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"></i>
+                        <input type="text" name="username" id="username_input" value="{{ entered_username }}" required placeholder="e.g. dhanusha, 8438467026, or PAT-1020" class="w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Password</label>
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-[11px] text-emerald-400 hover:text-emerald-300 cursor-pointer font-semibold" onclick="fillCredentials('dhanusha', 'patient123')">Auto-fill Patient</span>
+                            <span class="text-slate-600">&bull;</span>
+                            <span class="text-[11px] text-teal-400 hover:text-teal-300 cursor-pointer font-semibold" onclick="fillCredentials('admin', 'admin123')">Auto-fill Admin</span>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"></i>
+                        <input type="password" name="password" id="password_input" required placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition">
+                        <button type="button" onclick="togglePassword()" class="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300">
+                            <i data-lucide="eye" id="eyeIcon" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-teal-600 focus:ring-teal-500 focus:ring-offset-slate-900">
+                        <span>Keep me signed in</span>
+                    </label>
+                    <span class="text-slate-500 text-[11px]">Apex Clinical OS</span>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-teal-600/30 transition flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Sign In to Clinic OS
+                </button>
+            </form>
+
+            <!-- Quick One-Click Demo Logins & Credentials Cheatsheet -->
+            <div class="pt-5 border-t border-slate-800/80">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="key" class="w-3.5 h-3.5 text-teal-400"></i> Fast Role Sign-in (1-Click Demo)
+                    </p>
+                    <span class="text-[10px] text-teal-400 font-semibold">Click to login directly</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <!-- Admin -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-teal-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=admin" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-teal-400 group-hover:text-teal-300">Admin</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-teal-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">admin</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: admin123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('admin', 'admin123')" class="mt-1 text-[9px] text-teal-400/80 hover:text-teal-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Doctor -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=doctor" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-emerald-400 group-hover:text-emerald-300">Doctor</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-emerald-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">doctor</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: doctor123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('doctor', 'doctor123')" class="mt-1 text-[9px] text-emerald-400/80 hover:text-emerald-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Reception -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=reception" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-amber-400 group-hover:text-amber-300">Reception</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-amber-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">reception</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: reception123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('reception', 'reception123')" class="mt-1 text-[9px] text-amber-400/80 hover:text-amber-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Lab Tech -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=labtech" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-indigo-400 group-hover:text-indigo-300">Lab Tech</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-indigo-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">labtech</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: labtech123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('labtech', 'labtech123')" class="mt-1 text-[9px] text-indigo-400/80 hover:text-indigo-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Pharmacy -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-rose-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=pharmacist" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-rose-400 group-hover:text-rose-300">Pharmacy</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-rose-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">pharmacist</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: pharma123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('pharmacist', 'pharma123')" class="mt-1 text-[9px] text-rose-400/80 hover:text-rose-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Accountant -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=accountant" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-cyan-400 group-hover:text-cyan-300">Accountant</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-cyan-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">accountant</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: account123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('accountant', 'account123')" class="mt-1 text-[9px] text-cyan-400/80 hover:text-cyan-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Inventory -->
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/50 text-left transition group relative">
+                        <a href="{% url 'accounts:login' %}?demo=inventory" class="block">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-blue-400 group-hover:text-blue-300">Inventory</span>
+                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-blue-400"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">inventory</strong></span>
+                            <span class="text-[10px] text-slate-500 block font-mono">pass: inventory123</span>
+                        </a>
+                        <button type="button" onclick="fillCredentials('inventory', 'inventory123')" class="mt-1 text-[9px] text-blue-400/80 hover:text-blue-300 underline font-semibold">Auto-fill &uarr;</button>
+                    </div>
+
+                    <!-- Patient Portal (Demo) -->
+                    <div class="p-2.5 rounded-xl bg-teal-950/40 hover:bg-teal-900/50 border border-teal-500/30 hover:border-teal-400 text-left transition group col-span-2 sm:col-span-4 flex items-center justify-between">
+                        <a href="{% url 'accounts:login' %}?demo=patient" class="flex-1 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                            <div>
+                                <span class="text-xs font-bold text-teal-300 group-hover:text-teal-200">Patient Portal Demo (Rahul Verma)</span>
+                                <span class="text-[10px] text-slate-400 block">user: <strong class="text-teal-200 font-mono">patient</strong> &bull; pass: <strong class="text-teal-200 font-mono">patient123</strong></span>
+                            </div>
+                        </a>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="fillCredentials('patient', 'patient123')" class="px-2 py-1 rounded bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 text-[10px] font-bold">Auto-fill</button>
+                            <a href="{% url 'accounts:login' %}?demo=patient" class="text-[10px] font-bold text-teal-400 inline-flex items-center gap-1 hover:underline">1-Click Sign-in &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-6 text-xs text-slate-500">
+            <p>&copy; 2026 {{ clinic.name|default:"Apex Multi-Specialty Clinic" }} &bull; Role-Based Access Control</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function togglePassword() {
+            const pwd = document.getElementById('password_input');
+            const eye = document.getElementById('eyeIcon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                eye.setAttribute('data-lucide', 'eye-off');
+            } else {
+                pwd.type = 'password';
+                eye.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        function fillCredentials(username, password) {
+            document.getElementById('username_input').value = username;
+            document.getElementById('password_input').value = password;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Patient Portal | {{ clinic.name|default:"Apex Multi-Specialty Clinic" }}{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+    <!-- Patient Sidebar (Exact Section 2 Order) -->
+    <aside class="w-64 bg-slate-900 text-slate-200 flex flex-col fixed inset-y-0 z-30 shadow-xl">
+        <!-- Brand -->
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-800 bg-slate-950 shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+                <i data-lucide="cross" class="w-5 h-5"></i>
+            </div>
+            <div class="truncate">
+                <h1 class="font-bold text-white tracking-wide text-sm leading-tight truncate">{{ clinic.name|default:"Apex Health" }}</h1>
+                <p class="text-[10px] text-teal-400 font-semibold tracking-wider uppercase">Patient Portal</p>
+            </div>
+        </div>
+
+        <!-- Navigation Menu (Section 2 - Exact 11 items) -->
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <p class="px-3 text-[10px] font-bold text-teal-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Patient Services
+            </p>
+
+            <!-- 1. Dashboard Overview -->
+            <a href="{% url 'portal:dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'dashboard' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                1. Dashboard Overview
+            </a>
+
+            <!-- 2. My Profile -->
+            <a href="{% url 'portal:profile' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'profile' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                2. My Profile
+            </a>
+
+            <!-- 3. Book Appointment -->
+            <a href="{% url 'portal:book_appointment' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'book_appointment' %}bg-emerald-600 text-white shadow-sm shadow-emerald-500/30 font-bold{% else %}text-emerald-400{% endif %}">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                3. Book Appointment
+            </a>
+
+            <!-- 4. My Appointments -->
+            <a href="{% url 'portal:my_appointments' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'my_appointments' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                4. My Appointments
+            </a>
+
+            <!-- 5. Appointment History -->
+            <a href="{% url 'portal:appointment_history' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'appointment_history' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                5. Appointment History
+            </a>
+
+            <!-- 6. My Prescriptions -->
+            <a href="{% url 'portal:my_prescriptions' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name in 'my_prescriptions,prescription_detail' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                6. My Prescriptions
+            </a>
+
+            <!-- 7. My Laboratory Reports -->
+            <a href="{% url 'portal:my_lab_reports' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name in 'my_lab_reports,lab_report_detail' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="test-tube-2" class="w-4 h-4"></i>
+                7. My Lab Reports
+            </a>
+
+            <!-- 8. My Medical Records -->
+            <a href="{% url 'portal:my_medical_records' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'my_medical_records' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="folder-heart" class="w-4 h-4"></i>
+                8. My Medical Records
+            </a>
+
+            <!-- 9. Notifications -->
+            <a href="{% url 'portal:notifications' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'notifications' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="bell" class="w-4 h-4"></i>
+                9. Notifications
+            </a>
+
+            <!-- 10. Change Password -->
+            <a href="{% url 'portal:change_password' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'change_password' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="key-round" class="w-4 h-4"></i>
+                10. Change Password
+            </a>
+
+            <!-- 11. Logout -->
+            <a href="{% url 'portal:logout' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition text-rose-400 hover:bg-rose-500/20 hover:text-rose-300">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                11. Logout
+            </a>
+        </nav>
+
+        <!-- Patient Profile Box in Footer -->
+        <div class="p-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between shrink-0">
+            {% if request.user.is_authenticated %}
+            <div class="flex items-center gap-2.5 truncate">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-400 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
+                    {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                </div>
+                <div class="truncate">
+                    <p class="text-xs font-bold text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-[10px] text-teal-400 font-semibold">{{ request.user.patient_record.patient_id|default:"Patient Member" }}</p>
+                </div>
+            </div>
+            <a href="{% url 'portal:logout' %}" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Sign Out">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="w-full py-2 bg-teal-600 text-white text-xs font-bold rounded-lg text-center block">Sign In</a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="pl-64 flex-1 flex flex-col min-w-0">
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-20 flex items-center justify-between px-8">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Clinic:</span>
+                <span class="text-sm font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</span>
+                <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Patient Portal
+                </span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="{% url 'portal:book_appointment' %}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm shadow-emerald-600/20">
+                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> Book Appointment
+                </a>
+
+                <a href="{% url 'portal:notifications' %}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 relative transition" title="Notifications">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    {% if unread_notifications %}
+                    <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-bold text-[9px] flex items-center justify-center">
+                        {{ unread_notifications }}
+                    </span>
+                    {% endif %}
+                </a>
+
+                <div class="h-4 w-px bg-slate-200"></div>
+
+                <div class="flex items-center gap-2.5">
+                    <a href="{% url 'portal:profile' %}" class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                        {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                    </a>
+                    <div class="hidden sm:block text-left">
+                        <p class="text-xs font-bold text-slate-800 leading-tight">{{ request.user.get_full_name|default:request.user.username }}</p>
+                        <p class="text-[10px] text-teal-600 font-semibold font-mono">{{ request.user.patient_record.patient_id|default:"Patient" }}</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% if messages %}
+        <div class="px-8 pt-4 space-y-2">
+            {% for message in messages %}
+            <div class="p-4 rounded-xl text-sm font-semibold flex items-center justify-between {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif message.tags == 'error' %}bg-rose-50 text-rose-800 border border-rose-200{% elif message.tags == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}alert-octagon{% else %}info{% endif %}" class="w-4 h-4 shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Body Content -->
+        <main class="flex-1 p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

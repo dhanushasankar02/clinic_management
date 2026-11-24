@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Laboratory Dashboard | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Role Welcome Banner -->
+    <div class="bg-gradient-to-r from-indigo-950 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-indigo-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-xl shrink-0">
+                <i data-lucide="test-tube-2" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Diagnostic Division</span>
+                <h1 class="text-2xl font-black text-white tracking-tight">Laboratory & Pathology Command</h1>
+                <p class="text-xs text-indigo-200/80 mt-1">Sample Collection &bull; Diagnostic Investigation &bull; Report Verification</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'laboratory:order_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black text-xs transition shadow-md">
+                <i data-lucide="plus" class="w-4 h-4"></i> New Lab Order
+            </a>
+            <a href="{% url 'laboratory:catalogue' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition">
+                <i data-lucide="book-open" class="w-4 h-4"></i> Test Catalogue
+            </a>
+        </div>
+    </div>
+
+    <!-- Lab KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-600 block">Pending Orders</span>
+            <div class="text-3xl font-black text-amber-600 mt-1">{{ pending_orders|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Awaiting sample draw</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 block">Samples Collected</span>
+            <div class="text-3xl font-black text-indigo-600 mt-1">{{ collected_orders|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Ready for testing</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600 block">In Process</span>
+            <div class="text-3xl font-black text-teal-600 mt-1">{{ in_process_orders|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Analyzer run in progress</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block">Completed Today</span>
+            <div class="text-3xl font-black text-emerald-600 mt-1">{{ completed_today }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Reports verified & signed</p>
+        </div>
+    </div>
+
+    <!-- Active Lab Investigation Queue -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="microscope" class="w-5 h-5 text-indigo-600"></i>
+                <h3 class="font-bold text-slate-900 text-base">Active Laboratory Queue</h3>
+            </div>
+            <a href="{% url 'laboratory:order_list' %}" class="text-xs font-bold text-indigo-600 hover:underline">Full Lab Register &rarr;</a>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for o in pending_orders %}
+            <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold font-mono text-indigo-700">#{{ o.order_number }}</span>
+                    <h4 class="font-bold text-slate-900 text-sm mt-0.5">
+                        {% for it in o.items.all %}{{ it.test.name }}{% if not forloop.last %}, {% endif %}{% empty %}General Diagnostic Order{% endfor %}
+                    </h4>
+                    <p class="text-xs text-slate-400">Patient: {{ o.patient.full_name }} ({{ o.patient.patient_id|default:o.patient.id }})</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">Pending Draw</span>
+                    <a href="{% url 'laboratory:order_detail' o.id %}" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">
+                        Process Test
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-400 text-xs">No pending orders in the laboratory queue.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Patient Invoice | Smart Clinic{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> New Invoice Generator
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Create Patient Invoice</h1>
+            <p class="text-sm text-slate-500">Bill consultations, laboratory procedures, medications, and minor treatments.</p>
+        </div>
+        <a href="{% url 'appointments:list' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Appointments
+        </a>
+    </div>
+
+    <!-- Clinical Workflow Order Stepper -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="git-commit" class="w-4 h-4 text-teal-600"></i> Clinic Patient Flow Order:
+            </span>
+            <div class="flex items-center gap-2 text-xs flex-wrap font-semibold">
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 1. Register Patient
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 2. Reception & Token
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 3. Doctor Checkup
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 4. Lab / Pharmacy
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white shadow-sm flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> 5. Final Billing & Payments (Active)
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        {% if appointment %}
+        <input type="hidden" name="appointment" value="{{ appointment.pk }}">
+        {% endif %}
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Patient <span class="text-rose-500">*</span></label>
+                <select name="patient" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    <option value="">-- Select Patient --</option>
+                    {% for p in patients %}
+                    <option value="{{ p.pk }}" {% if selected_patient and selected_patient.pk == p.pk %}selected{% endif %}>
+                        {{ p.full_name }} (MRN: {{ p.patient_id|default:p.id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Billing Doctor</label>
+                <select name="doctor" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    <option value="">-- None / Clinic Billing --</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.pk }}" {% if selected_doctor and selected_doctor.pk == d.pk %}selected{% endif %}>Dr. {{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Due Date</label>
+                <input type="date" name="due_date" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                    <i data-lucide="list-plus" class="w-4 h-4 text-teal-600"></i> Charge Line Items
+                </h3>
+                <button type="button" onclick="addInvoiceItem()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold transition">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Line Item
+                </button>
+            </div>
+
+            <table class="w-full text-left text-xs text-slate-600" id="invTable">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold">
+                    <tr>
+                        <th class="py-2.5 px-3">Item Category</th>
+                        <th class="py-2.5 px-3">Description</th>
+                        <th class="py-2.5 px-3">Quantity</th>
+                        <th class="py-2.5 px-3">Unit Rate (₹)</th>
+                        <th class="py-2.5 px-2 text-center"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="invBody">
+                    <tr>
+                        <td class="p-2 w-44">
+                            <select name="item_type[]" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium">
+                                <option value="CONSULTATION">Doctor Consultation</option>
+                                <option value="PROCEDURE">Clinical Procedure</option>
+                                <option value="LAB">Lab Diagnostics</option>
+                                <option value="PHARMACY">Pharmacy / Medicine</option>
+                                <option value="OTHER">General Charge</option>
+                            </select>
+                        </td>
+                        <td class="p-2">
+                            <input type="text" name="description[]" list="services_list" value="{% if selected_doctor %}Doctor Consultation Fee (Dr. {{ selected_doctor.name }}){% else %}Physician Consultation{% endif %}" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                        </td>
+                        <td class="p-2 w-20">
+                            <input type="number" name="quantity[]" value="1" min="1" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-center">
+                        </td>
+                        <td class="p-2 w-28">
+                            <input type="number" step="0.01" name="unit_price[]" value="{% if selected_doctor and selected_doctor.consultation_fee %}{{ selected_doctor.consultation_fee }}{% else %}500.00{% endif %}" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900">
+                        </td>
+                        <td class="p-2 text-center w-10">
+                            <button type="button" onclick="removeInvRow(this)" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <datalist id="services_list">
+                {% for s in services %}
+                <option value="{{ s.name }} (₹{{ s.fee }})">
+                {% endfor %}
+            </datalist>
+
+            <!-- Discounts & Tax -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Discount Amount (₹)</label>
+                    <input type="number" step="0.01" name="discount" value="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Tax / GST (%)</label>
+                    <input type="number" step="0.01" name="tax_percent" value="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Invoice Notes / Payment Instructions</label>
+                    <input type="text" name="notes" placeholder="e.g. Health insurance claimed or self-pay" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-4">
+            <a href="{% url 'billing:invoice_list' %}" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium text-sm transition">Cancel</a>
+            <button type="submit" class="px-7 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md shadow-teal-600/20 transition flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Generate Invoice
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function addInvoiceItem() {
+    const tbody = document.getElementById('invBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="p-2 w-44">
+            <select name="item_type[]" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium">
+                <option value="CONSULTATION">Doctor Consultation</option>
+                <option value="PROCEDURE">Clinical Procedure</option>
+                <option value="LAB">Lab Diagnostics</option>
+                <option value="PHARMACY">Pharmacy / Medicine</option>
+                <option value="OTHER">General Charge</option>
+            </select>
+        </td>
+        <td class="p-2">
+            <input type="text" name="description[]" list="services_list" placeholder="Line item description" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+        </td>
+        <td class="p-2 w-20">
+            <input type="number" name="quantity[]" value="1" min="1" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-center">
+        </td>
+        <td class="p-2 w-28">
+            <input type="number" step="0.01" name="unit_price[]" value="100.00" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900">
+        </td>
+        <td class="p-2 text-center w-10">
+            <button type="button" onclick="removeInvRow(this)" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    lucide.createIcons();
+}
+
+function removeInvRow(btn) {
+    const tbody = document.getElementById('invBody');
+    if (tbody.children.length > 1) {
+        btn.closest('tr').remove();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Dashboard Overview | Patient Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Welcome Banner -->
+    <div class="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-teal-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center font-bold text-xl shrink-0">
+                <i data-lucide="user-check" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-teal-400">Welcome Back</span>
+                    <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-teal-200">{{ patient.patient_id }}</span>
+                </div>
+                <h1 class="text-2xl font-black text-white tracking-tight mt-0.5">{{ patient.full_name }}</h1>
+                <p class="text-xs text-slate-300 mt-1">Manage your health records, view medical prescriptions, and schedule clinic visits.</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="{% url 'portal:book_appointment' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition shadow-md shadow-emerald-500/20">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i> Book New Appointment
+            </a>
+            <a href="{% url 'portal:my_appointments' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition">
+                <i data-lucide="calendar" class="w-4 h-4"></i> My Visits
+            </a>
+        </div>
+    </div>
+
+    <!-- Patient KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-teal-700">Upcoming Visits</span>
+                <i data-lucide="calendar-check" class="w-4 h-4 text-teal-600"></i>
+            </div>
+            <div class="text-3xl font-black text-slate-900 mt-1">{{ upcoming_appointments|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Active appointments</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Consultations</span>
+                <i data-lucide="file-heart" class="w-4 h-4 text-indigo-600"></i>
+            </div>
+            <div class="text-3xl font-black text-indigo-900 mt-1">{{ total_consultations }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Medical encounters</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Lab Reports</span>
+                <i data-lucide="test-tube-2" class="w-4 h-4 text-rose-600"></i>
+            </div>
+            <div class="text-3xl font-black text-rose-900 mt-1">{{ total_lab_orders }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Diagnostic tests</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Notifications</span>
+                <i data-lucide="bell" class="w-4 h-4 text-amber-600"></i>
+            </div>
+            <div class="text-3xl font-black text-amber-900 mt-1">{{ unread_notifications }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Unread updates</p>
+        </div>
+    </div>
+
+    <!-- Next Upcoming Appointment Spotlight -->
+    {% if next_appointment %}
+    <div class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-slate-900/5 p-6 rounded-3xl border border-emerald-500/30 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-600 text-white font-black text-base flex flex-col items-center justify-center shadow-md">
+                    <span>{{ next_appointment.token_number|default:"T-01" }}</span>
+                    <span class="text-[9px] font-semibold uppercase tracking-wider opacity-80">Token</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Next Scheduled Visit:</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold
+                            {% if next_appointment.status == 'CONFIRMED' %}bg-emerald-100 text-emerald-800
+                            {% elif next_appointment.status == 'PENDING' %}bg-amber-100 text-amber-800
+                            {% elif next_appointment.status == 'WAITING' %}bg-teal-100 text-teal-800
+                            {% else %}bg-slate-100 text-slate-800{% endif %}">
+                            {{ next_appointment.get_status_display }}
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mt-0.5">Dr. {{ next_appointment.doctor.name }}</h3>
+                    <p class="text-xs text-slate-500 mt-0.5 font-medium">
+                        {{ next_appointment.department.name|default:"General Medicine" }} &bull;
+                        {{ next_appointment.appointment_date|date:"l, M d, Y" }} at <strong>{{ next_appointment.appointment_time|time:"h:i A" }}</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <a href="{% url 'portal:my_appointments' %}" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition">
+                    View Details
+                </a>
+                {% if next_appointment.status in 'PENDING,CONFIRMED,BOOKED' %}
+                <form method="POST" action="{% url 'portal:cancel_appointment' next_appointment.id %}" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                    {% csrf_token %}
+                    <button type="submit" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition">
+                        Cancel Visit
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming Visits & Recent Medical History Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upcoming Visits Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-5 h-5 text-teal-600"></i>
+                    <h3 class="font-bold text-slate-900 text-base">My Scheduled Appointments</h3>
+                </div>
+                <a href="{% url 'portal:my_appointments' %}" class="text-xs font-bold text-teal-600 hover:underline">View All &rarr;</a>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                {% for appt in upcoming_appointments %}
+                <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs font-bold text-teal-700">#{{ appt.appointment_id }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+                                {% if appt.status == 'CONFIRMED' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                {% elif appt.status == 'PENDING' %}bg-amber-50 text-amber-700 border border-amber-200
+                                {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                {{ appt.get_status_display }}
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm mt-0.5">Dr. {{ appt.doctor.name }}</h4>
+                        <p class="text-xs text-slate-400">{{ appt.appointment_date|date:"M d, Y" }} at {{ appt.appointment_time }} &bull; Token: {{ appt.token_number }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {% if appt.status in 'PENDING,CONFIRMED,BOOKED' %}
+                        <form method="POST" action="{% url 'portal:cancel_appointment' appt.id %}" onsubmit="return confirm('Cancel this appointment?');">
+                            {% csrf_token %}
+                            <button type="submit" class="px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-lg font-medium transition">
+                                Cancel
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-8 text-center text-slate-400 text-xs">
+                    No upcoming appointments scheduled.
+                    <a href="{% url 'portal:book_appointment' %}" class="text-teal-600 font-bold hover:underline block mt-1">Book an appointment now &rarr;</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Consultations / Prescriptions -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="file-heart" class="w-5 h-5 text-indigo-600"></i>
+                    <h3 class="font-bold text-slate-900 text-base">Recent Consultations & Rx</h3>
+                </div>
+                <a href="{% url 'portal:my_prescriptions' %}" class="text-xs font-bold text-indigo-600 hover:underline">All Prescriptions &rarr;</a>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                {% for c in recent_consultations %}
+                <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Dr. {{ c.doctor.name }}</h4>
+                        <p class="text-xs text-slate-500 font-medium">Diagnosis: {{ c.diagnosis|truncatechars:45|default:"General consultation" }}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">{{ c.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    <a href="{% url 'portal:prescription_detail' c.id %}" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        View Rx
+                    </a>
+                </div>
+                {% empty %}
+                <div class="p-8 text-center text-slate-400 text-xs">
+                    No consultation records yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Diagnostic Lab Order | Smart Clinic{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Laboratory Order Form
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">New Laboratory Order</h1>
+            <p class="text-sm text-slate-500">Initiate diagnostic testing, assign patient, referring doctor, and tests.</p>
+        </div>
+        <a href="{% url 'laboratory:order_list' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Queue
+        </a>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-1">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Patient <span class="text-rose-500">*</span></label>
+                <select name="patient" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    <option value="">-- Select Patient --</option>
+                    {% for p in patients %}
+                    <option value="{{ p.pk }}">{{ p.full_name }} (MRN: {{ p.patient_id|default:p.id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Referring Doctor</label>
+                <select name="doctor" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    <option value="">-- Direct Lab Walk-in / None --</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.pk }}">Dr. {{ d.name }} ({{ d.specialty.name|default:"General" }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Priority Level</label>
+                <select name="priority" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
+                    <option value="ROUTINE">Routine</option>
+                    <option value="URGENT">Urgent Priority</option>
+                    <option value="STAT">STAT / Emergency Alert</option>
+                </select>
+            </div>
+            <div class="md:col-span-3">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Clinical Indications / Reason</label>
+                <input type="text" name="clinical_notes" placeholder="e.g. Routine pre-op screening, suspected anemia..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+            </div>
+        </div>
+
+        <!-- Tests Catalogue Checkboxes -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <i data-lucide="check-square" class="w-4 h-4 text-teal-600"></i> Select Tests to Order <span class="text-rose-500">*</span>
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {% for t in tests %}
+                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+                    <input type="checkbox" name="tests[]" value="{{ t.pk }}" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500 mt-0.5">
+                    <div class="text-xs">
+                        <div class="font-bold text-slate-900">{{ t.name }}</div>
+                        <div class="text-slate-500 font-mono text-[11px]">{{ t.code }} | {{ t.get_category_display }}</div>
+                        <div class="font-semibold text-teal-700 mt-1">₹{{ t.price }}</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-4">
+            <a href="{% url 'laboratory:order_list' %}" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium text-sm transition">Cancel</a>
+            <button type="submit" class="px-7 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md shadow-teal-600/20 transition flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4"></i> Submit Lab Order
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

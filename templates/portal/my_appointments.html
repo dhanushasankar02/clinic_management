@@ -1,0 +1,111 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}My Appointments | Patient Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Card -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-bold uppercase tracking-wider mb-1">
+                <i data-lucide="calendar-check" class="w-4 h-4"></i> Scheduled Visits
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">My Active Appointments</h1>
+            <p class="text-xs text-slate-500">Track the confirmation status of your upcoming clinic visits.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'portal:appointment_history' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                <i data-lucide="history" class="w-4 h-4"></i> View Past History
+            </a>
+            <a href="{% url 'portal:book_appointment' %}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i> Book New
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Appointments List -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-base">Current & Upcoming Visits</h3>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                {{ appointments|length }} Active Bookings
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50/80 text-slate-500 uppercase text-[11px] font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3.5 px-6">Appt ID & Token</th>
+                        <th class="py-3.5 px-6">Doctor & Department</th>
+                        <th class="py-3.5 px-6">Scheduled Date & Time</th>
+                        <th class="py-3.5 px-6">Type & Reason</th>
+                        <th class="py-3.5 px-6">Current Status</th>
+                        <th class="py-3.5 px-6 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                    {% for a in appointments %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3.5 px-6">
+                            <span class="font-mono text-xs font-bold text-teal-700 block">#{{ a.appointment_id }}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono">Token: {{ a.token_number }}</span>
+                        </td>
+
+                        <td class="py-3.5 px-6">
+                            <h4 class="font-bold text-slate-900 text-sm">Dr. {{ a.doctor.name }}</h4>
+                            <p class="text-xs text-slate-400">{{ a.department.name|default:"General Medicine" }}</p>
+                        </td>
+
+                        <td class="py-3.5 px-6 font-mono text-xs text-slate-800">
+                            <div class="font-bold">{{ a.appointment_date|date:"D, M d, Y" }}</div>
+                            <div class="text-slate-500 font-normal">{{ a.appointment_time|time:"h:i A" }}</div>
+                        </td>
+
+                        <td class="py-3.5 px-6 text-xs text-slate-700">
+                            <span class="font-bold text-slate-900 block">{{ a.get_appointment_type_display }}</span>
+                            <span class="text-slate-500">{{ a.reason|truncatechars:35 }}</span>
+                        </td>
+
+                        <td class="py-3.5 px-6">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold
+                                {% if a.status == 'CONFIRMED' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                {% elif a.status == 'PENDING' %}bg-amber-50 text-amber-700 border border-amber-200
+                                {% elif a.status == 'WAITING' %}bg-teal-50 text-teal-700 border border-teal-200
+                                {% elif a.status == 'CHECKED_IN' %}bg-blue-50 text-blue-700 border border-blue-200
+                                {% elif a.status == 'IN_CONSULTATION' %}bg-purple-50 text-purple-700 border border-purple-200
+                                {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                {{ a.get_status_display }}
+                            </span>
+                        </td>
+
+                        <td class="py-3.5 px-6 text-right">
+                            {% if a.status in 'PENDING,CONFIRMED,BOOKED' %}
+                            <form method="POST" action="{% url 'portal:cancel_appointment' a.id %}" onsubmit="return confirm('Are you sure you want to cancel this appointment with Dr. {{ a.doctor.name }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition">
+                                    Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-xs text-slate-400 italic">In progress</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-12 text-center text-slate-400 text-sm">
+                            <i data-lucide="calendar" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                            You have no active upcoming appointments scheduled.
+                            <a href="{% url 'portal:book_appointment' %}" class="text-teal-600 font-bold hover:underline block mt-1.5">Schedule an appointment &rarr;</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

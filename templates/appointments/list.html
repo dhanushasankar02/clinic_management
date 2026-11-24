@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+
+{% block title %}Appointments | Smart Clinic Automation{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Appointments Management & Reception</h2>
+            <p class="text-sm text-slate-500 mt-1">Reception check-in, token issue, doctor slot booking, and checkup routing.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'appointments:queue_board' %}" class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg shadow-sm transition">
+                <i data-lucide="list-ordered" class="w-4 h-4 text-emerald-400"></i>
+                Live Queue Display
+            </a>
+            <a href="{% url 'appointments:availability' %}" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2.5 rounded-lg border border-slate-200 transition">
+                <i data-lucide="clock" class="w-4 h-4 text-teal-600"></i>
+                Doctor Availability
+            </a>
+            <button onclick="openBookingModal()" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm shadow-teal-500/20 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Book / Reception Check-in
+            </button>
+        </div>
+    </div>
+
+    <!-- Clinical Workflow Order Stepper -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="git-commit" class="w-4 h-4 text-teal-600"></i> Clinic Patient Flow Order:
+            </span>
+            <div class="flex items-center gap-2 text-xs flex-wrap font-semibold">
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 1. Register Patient
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white shadow-sm flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> 2. Reception Check-In (Token) (Active)
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700">
+                    3. Doctor Checkup
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                    4. Lab (If Wanted) OR Pharmacy (If Not)
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_patient %}
+    <!-- Active Patient Check-in Banner -->
+    <div class="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-500/40 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-lg shadow-md shrink-0">
+                <i data-lucide="user-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-teal-100 text-teal-800">Step 2: Reception Check-In</span>
+                    <span class="text-xs text-slate-500">ID: {{ selected_patient.patient_id|default:selected_patient.id }}</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mt-0.5">{{ selected_patient.full_name }} ({{ selected_patient.phone }})</h3>
+                <p class="text-xs text-slate-600">Patient registered. Enter reception appointment and assign token for doctor checkup.</p>
+            </div>
+        </div>
+        <button type="button" onclick="openBookingModal()" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
+            <i data-lucide="ticket" class="w-4 h-4"></i> Enter Reception Details & Assign Token &rarr;
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Filters Bar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-wrap items-center gap-4 text-xs">
+        <form method="GET" class="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-1">
+            <div class="flex items-center gap-2">
+                <span class="font-medium text-slate-600">Status:</span>
+                <select name="status" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white text-xs">
+                    <option value="">All Statuses</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                    <option value="COMPLETED" {% if status_filter == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                    <option value="CANCELLED" {% if status_filter == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span class="font-medium text-slate-600">Doctor:</span>
+                <select name="doctor" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white text-xs">
+                    <option value="">All Doctors</option>
+                    {% for doc in doctors %}
+                    <option value="{{ doc.id }}" {% if doctor_filter == doc.id|stringformat:"i" %}selected{% endif %}>Dr. {{ doc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span class="font-medium text-slate-600">Date:</span>
+                <input type="date" name="date" value="{{ date_filter }}" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white text-xs">
+            </div>
+
+            <button type="submit" class="bg-slate-800 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-slate-900 transition">Filter</button>
+            {% if status_filter or doctor_filter or date_filter %}
+            <a href="{% url 'appointments:list' %}" class="text-slate-500 hover:text-slate-800 underline">Reset</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-3.5">ID</th>
+                        <th class="px-6 py-3.5">Patient Details</th>
+                        <th class="px-6 py-3.5">Doctor & Specialty</th>
+                        <th class="px-6 py-3.5">Date & Time</th>
+                        <th class="px-6 py-3.5">Channel</th>
+                        <th class="px-6 py-3.5">Reason</th>
+                        <th class="px-6 py-3.5">Status</th>
+                        <th class="px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for appt in appointments %}
+                    <tr class="hover:bg-slate-50/60 transition">
+                        <td class="px-6 py-4 text-xs font-mono text-slate-400">#{{ appt.id }}</td>
+                        <td class="px-6 py-4">
+                            <p class="font-semibold text-slate-900 text-xs">{{ appt.patient.full_name }}</p>
+                            <p class="text-[11px] text-slate-400 font-mono">{{ appt.patient.phone }}</p>
+                            {% if appt.patient.email %}
+                            <p class="text-[10px] text-slate-400 truncate max-w-[150px]">{{ appt.patient.email }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-xs text-slate-700">
+                            Dr. {{ appt.doctor.name }}
+                            <span class="block text-[10px] text-teal-600 font-medium">{{ appt.doctor.specialty.name|default:"General" }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-medium text-slate-800">
+                            {{ appt.appointment_date|date:"d M Y" }}
+                            <span class="block text-[11px] text-slate-400 font-semibold">{{ appt.appointment_time|time:"h:i A" }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if appt.source == 'WHATSAPP' %}
+                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                <i data-lucide="message-circle" class="w-2.5 h-2.5"></i> WhatsApp
+                            </span>
+                            {% else %}
+                            <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                                {{ appt.get_source_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-xs text-slate-600 max-w-xs truncate">
+                            {{ appt.reason|default:"Consultation" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if appt.status == 'CONFIRMED' %}
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-1 rounded-full">Confirmed</span>
+                            {% elif appt.status == 'PENDING' %}
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100/70 px-2.5 py-1 rounded-full">Pending</span>
+                            {% elif appt.status == 'COMPLETED' %}
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100/70 px-2.5 py-1 rounded-full">Completed</span>
+                            {% elif appt.status == 'CANCELLED' %}
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-100/70 px-2.5 py-1 rounded-full">Cancelled</span>
+                            {% else %}
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">{{ appt.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="inline-flex items-center gap-1.5 flex-wrap justify-end">
+                                {% if appt.status == 'PENDING' %}
+                                <a href="{% url 'appointments:confirm' appt.id %}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow-sm transition inline-flex items-center gap-1" title="Confirm Booking">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Confirm
+                                </a>
+                                <form method="POST" action="{% url 'appointments:reject' appt.id %}" class="inline" onsubmit="return confirm('Reject this appointment?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="px-2.5 py-1 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-semibold rounded border border-rose-200 transition" title="Reject Booking">
+                                        Reject
+                                    </button>
+                                </form>
+                                {% elif appt.status == 'CONFIRMED' %}
+                                <a href="{% url 'appointments:checkin' appt.id %}" class="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs font-semibold rounded border border-teal-200 transition inline-flex items-center gap-1">
+                                    <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Check In
+                                </a>
+                                <a href="{% url 'consultations:create' %}?patient_id={{ appt.patient.id }}&appointment_id={{ appt.id }}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow-sm transition inline-flex items-center gap-1" title="Start Doctor Checkup">
+                                    <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> Doctor Checkup &rarr;
+                                </a>
+                                {% elif appt.status == 'WAITING' or appt.status == 'CHECKED_IN' or appt.status == 'IN_CONSULTATION' %}
+                                <a href="{% url 'consultations:create' %}?patient_id={{ appt.patient.id }}&appointment_id={{ appt.id }}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow-sm transition inline-flex items-center gap-1" title="Start Doctor Checkup">
+                                    <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> Doctor Checkup &rarr;
+                                </a>
+                                {% elif appt.status == 'COMPLETED' %}
+                                {% if appt.consultation %}
+                                <a href="{% url 'consultations:detail' appt.consultation.id %}" class="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs font-bold rounded border border-teal-200 transition inline-flex items-center gap-1" title="View Doctor Diagnosis & Prescriptions">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> View Rx
+                                </a>
+                                {% else %}
+                                <a href="{% url 'consultations:create' %}?patient_id={{ appt.patient.id }}&appointment_id={{ appt.id }}" class="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold rounded border border-amber-200 transition inline-flex items-center gap-1" title="Record Doctor Checkup">
+                                    <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> Record Checkup
+                                </a>
+                                {% endif %}
+
+                                {% if can_view_billing %}
+                                {% if appt.invoices.first %}
+                                <a href="{% url 'billing:invoice_detail' appt.invoices.first.id %}" class="px-2.5 py-1 {% if appt.invoices.first.status == 'PAID' %}bg-emerald-50 text-emerald-700 border-emerald-200{% else %}bg-amber-50 text-amber-700 border-amber-200{% endif %} text-xs font-bold rounded border transition inline-flex items-center gap-1" title="View Invoice">
+                                    <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Invoice ({{ appt.invoices.first.get_status_display }})
+                                </a>
+                                {% else %}
+                                <a href="{% url 'billing:invoice_create' %}?patient_id={{ appt.patient.id }}&appointment_id={{ appt.id }}" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold rounded border border-blue-200 transition inline-flex items-center gap-1" title="Generate Bill & Invoice">
+                                    <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Bill / Invoice &rarr;
+                                </a>
+                                {% endif %}
+                                {% endif %}
+                                {% endif %}
+
+                                {% if appt.status != 'COMPLETED' and appt.status != 'CANCELLED' and appt.status != 'REJECTED' %}
+                                <a href="{% url 'appointments:status_update' appt.id %}?status=COMPLETED" class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded hover:bg-blue-100 transition">Complete</a>
+                                {% endif %}
+
+                                <!-- Quick Change Status Selector -->
+                                <select onchange="if(this.value && confirm('Change appointment status to ' + this.options[this.selectedIndex].text + '?')){ window.location.href='{% url 'appointments:status_update' appt.id %}?status=' + this.value; } else { this.selectedIndex=0; }" class="text-[11px] font-semibold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 hover:bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer transition" title="Change Appointment Status">
+                                    <option value="" disabled selected>Change Status ▾</option>
+                                    {% if appt.status != 'WAITING' %}
+                                    <option value="WAITING">Return to Queue (Waiting)</option>
+                                    {% endif %}
+                                    {% if appt.status != 'IN_CONSULTATION' %}
+                                    <option value="IN_CONSULTATION">In Consultation</option>
+                                    {% endif %}
+                                    {% if appt.status != 'CONFIRMED' %}
+                                    <option value="CONFIRMED">Reopen as Confirmed</option>
+                                    {% endif %}
+                                    {% if appt.status != 'COMPLETED' %}
+                                    <option value="COMPLETED">Mark as Completed</option>
+                                    {% endif %}
+                                    {% if appt.status != 'CANCELLED' %}
+                                    <option value="CANCELLED">Cancel Visit</option>
+                                    {% endif %}
+                                </select>
+
+                                <a href="{% url 'appointments:print_slip' appt.id %}" class="p-1 text-slate-400 hover:text-slate-700 transition" title="Print Slip">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-sm text-slate-500">
+                            No appointments found matching your filter criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Schedule New Appointment -->
+<div id="bookingModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-slate-900 text-base">Schedule New Appointment</h3>
+            <button type="button" onclick="closeBookingModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 leading-none">&times;</button>
+        </div>
+
+        <form method="POST" action="{% url 'appointments:list' %}" class="space-y-4 pt-4">
+            {% csrf_token %}
+            
+            <!-- Doctor Selection -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Doctor</label>
+                <select name="doctor" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="">Select Doctor...</option>
+                    {% for doc in doctors %}
+                    <option value="{{ doc.id }}" {% if forloop.first %}selected{% endif %}>
+                        Dr. {{ doc.name }} ({{ doc.specialty.name|default:"General" }}) - Fee: ₹{{ doc.consultation_fee }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Patient Information (Fill Name or Select Existing) -->
+            <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-slate-800">Patient Details</label>
+                    <div class="inline-flex rounded-lg p-0.5 bg-slate-200/80 text-[11px]">
+                        <button type="button" id="tabFillName" onclick="setPatientMode('fill')" class="px-2.5 py-1 rounded-md font-semibold bg-white text-teal-700 shadow-xs">
+                            Type Name ✏️
+                        </button>
+                        <button type="button" id="tabChooseExisting" onclick="setPatientMode('choose')" class="px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900">
+                            Choose Registered
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mode 1: Fill Patient Name directly (Default) -->
+                <div id="fillPatientSection" class="space-y-2.5">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-600 mb-1">Patient Full Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="patient_name" id="patientNameInput" list="existingPatientsList" placeholder="Enter patient name (e.g. Ramesh Patel)" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500" oninput="handlePatientNameInput(this)">
+                        <datalist id="existingPatientsList">
+                            {% for pat in patients %}
+                            <option value="{{ pat.full_name }}" data-phone="{{ pat.phone }}" data-email="{{ pat.email }}" data-gender="{{ pat.gender }}" data-blood-group="{{ pat.blood_group }}" data-allergies="{{ pat.allergies }}" data-address="{{ pat.address }}" data-id="{{ pat.id }}">{{ pat.phone }}</option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Phone / WhatsApp Number (Optional)</label>
+                            <input type="text" name="patient_phone" id="patientPhoneInput" placeholder="+91 98765 43210" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Email Address (Optional)</label>
+                            <input type="email" name="patient_email" id="patientEmailInput" placeholder="patient@example.com" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Gender</label>
+                            <select name="gender" id="patientGenderInput" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                                <option value="O">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Blood Group</label>
+                            <select name="blood_group" id="patientBloodGroupInput" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                <option value="UNKNOWN">Not Specified</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Known Allergies (Optional)</label>
+                            <input type="text" name="allergies" id="patientAllergiesInput" placeholder="e.g. Penicillin, Peanuts" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600 mb-1">Address / Location (Optional)</label>
+                            <input type="text" name="address" id="patientAddressInput" placeholder="e.g. Metro City Central" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode 2: Select Existing Patient from Dropdown -->
+                <div id="choosePatientSection" class="hidden">
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Select from Registered Patients</label>
+                    <select name="patient" id="existingPatientSelect" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500" onchange="handleSelectExistingPatient(this)">
+                        <option value="">Choose patient...</option>
+                        {% for pat in patients %}
+                        <option value="{{ pat.id }}" data-name="{{ pat.full_name }}" data-phone="{{ pat.phone }}" data-email="{{ pat.email }}" data-gender="{{ pat.gender }}" data-blood-group="{{ pat.blood_group }}" data-allergies="{{ pat.allergies }}" data-address="{{ pat.address }}">
+                            {{ pat.full_name }} ({{ pat.phone }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date & Time Row -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
+                    <input type="date" name="appointment_date" value="{{ today }}" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Time</label>
+                    <input type="time" name="appointment_time" value="10:00" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+            </div>
+
+            <!-- Reason for Visit -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Reason for Visit</label>
+                <input type="text" name="reason" placeholder="e.g. Heart checkup, Chest pain, Consultation" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-3 flex flex-wrap items-center justify-end gap-2.5 border-t border-slate-100">
+                <button type="button" onclick="closeBookingModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                    Cancel
+                </button>
+                <button type="submit" name="action" value="consult_now" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition flex items-center gap-1.5 active:scale-95">
+                    <i data-lucide="stethoscope" class="w-4 h-4"></i>
+                    Register & Go to Doctor Checkup &rarr;
+                </button>
+                <button type="submit" name="action" value="book_and_queue" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
+                    Queue Only (Issue Token)
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function openBookingModal() {
+        document.getElementById('bookingModal').classList.remove('hidden');
+        setPatientMode('fill');
+        setTimeout(() => document.getElementById('patientNameInput').focus(), 100);
+    }
+
+    function closeBookingModal() {
+        document.getElementById('bookingModal').classList.add('hidden');
+    }
+
+    function setPatientMode(mode) {
+        const fillSec = document.getElementById('fillPatientSection');
+        const chooseSec = document.getElementById('choosePatientSection');
+        const tabFill = document.getElementById('tabFillName');
+        const tabChoose = document.getElementById('tabChooseExisting');
+        const nameInput = document.getElementById('patientNameInput');
+        const selectEl = document.getElementById('existingPatientSelect');
+
+        if (mode === 'fill') {
+            fillSec.classList.remove('hidden');
+            chooseSec.classList.add('hidden');
+            tabFill.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-teal-700 shadow-xs';
+            tabChoose.className = 'px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900';
+            nameInput.required = true;
+            selectEl.required = false;
+            selectEl.value = '';
+        } else {
+            fillSec.classList.add('hidden');
+            chooseSec.classList.remove('hidden');
+            tabChoose.className = 'px-2.5 py-1 rounded-md font-semibold bg-white text-teal-700 shadow-xs';
+            tabFill.className = 'px-2.5 py-1 rounded-md font-medium text-slate-600 hover:text-slate-900';
+            nameInput.required = false;
+            selectEl.required = true;
+        }
+    }
+
+    function handlePatientNameInput(input) {
+        const val = input.value.trim();
+        const list = document.getElementById('existingPatientsList');
+        const phoneInput = document.getElementById('patientPhoneInput');
+        const emailInput = document.getElementById('patientEmailInput');
+        const genderInput = document.getElementById('patientGenderInput');
+        const bloodInput = document.getElementById('patientBloodGroupInput');
+        const allergiesInput = document.getElementById('patientAllergiesInput');
+        const addressInput = document.getElementById('patientAddressInput');
+
+        // Check if entered name matches an existing patient in datalist
+        for (const opt of list.options) {
+            if (opt.value.toLowerCase() === val.toLowerCase()) {
+                if (opt.dataset.phone) phoneInput.value = opt.dataset.phone;
+                if (opt.dataset.email) emailInput.value = opt.dataset.email;
+                if (opt.dataset.gender && genderInput) genderInput.value = opt.dataset.gender;
+                if (opt.dataset.bloodGroup && bloodInput) bloodInput.value = opt.dataset.bloodGroup;
+                if (opt.dataset.allergies && allergiesInput) allergiesInput.value = opt.dataset.allergies;
+                if (opt.dataset.address && addressInput) addressInput.value = opt.dataset.address;
+                break;
+            }
+        }
+    }
+
+    function handleSelectExistingPatient(select) {
+        const selected = select.options[select.selectedIndex];
+        if (selected && selected.value) {
+            document.getElementById('patientNameInput').value = selected.dataset.name || '';
+            document.getElementById('patientPhoneInput').value = selected.dataset.phone || '';
+            document.getElementById('patientEmailInput').value = selected.dataset.email || '';
+            const g = document.getElementById('patientGenderInput');
+            const bg = document.getElementById('patientBloodGroupInput');
+            const al = document.getElementById('patientAllergiesInput');
+            const ad = document.getElementById('patientAddressInput');
+            if (g) g.value = selected.dataset.gender || 'M';
+            if (bg) bg.value = selected.dataset.bloodGroup || 'UNKNOWN';
+            if (al) al.value = selected.dataset.allergies || '';
+            if (ad) ad.value = selected.dataset.address || '';
+        }
+    }
+
+    // Auto-open if patient is passed from registration or quick link
+    {% if selected_patient %}
+    document.addEventListener('DOMContentLoaded', function() {
+        openBookingModal();
+        setPatientMode('choose');
+        const select = document.getElementById('existingPatientSelect');
+        if (select) {
+            select.value = "{{ selected_patient.id }}";
+            handleSelectExistingPatient(select);
+        }
+    });
+    {% elif request.GET.open_booking %}
+    document.addEventListener('DOMContentLoaded', function() {
+        openBookingModal();
+        {% if request.GET.patient_id %}
+        setPatientMode('choose');
+        const select = document.getElementById('existingPatientSelect');
+        if (select) {
+            select.value = "{{ request.GET.patient_id }}";
+            handleSelectExistingPatient(select);
+        }
+        {% endif %}
+    });
+    {% endif %}
+</script>
+{% endblock %}

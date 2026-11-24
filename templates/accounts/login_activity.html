@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}Login Activity & Member Tracking | Admin Control{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-bold uppercase tracking-wider mb-1">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> Security & Session Surveillance
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Login Activity & Member Session Tracking</h1>
+            <p class="text-sm text-slate-500">Live surveillance of authentication events, active sessions, and failed login attempts across all clinic staff.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'accounts:users_list' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-sm">
+                <i data-lucide="users" class="w-4 h-4"></i> User Directory
+            </a>
+        </div>
+    </div>
+
+    <!-- Section 5: 7 Required Statistics Cards (Real Django DB Data) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+        <!-- 1. Total Registered Users -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Registered</span>
+                <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div class="text-2xl font-black text-slate-900">{{ stats.total_registered_users }}</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Total accounts</p>
+        </div>
+
+        <!-- 2. Active User Accounts -->
+        <div class="bg-white p-4 rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-sm">
+            <div class="flex items-center justify-between text-emerald-600 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Active Accounts</span>
+                <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
+            </div>
+            <div class="text-2xl font-black text-emerald-700">{{ stats.active_user_accounts }}</div>
+            <p class="text-[10px] text-emerald-600 mt-0.5">Enabled members</p>
+        </div>
+
+        <!-- 3. Inactive User Accounts -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500">Inactive</span>
+                <i data-lucide="user-x" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <div class="text-2xl font-black text-rose-600">{{ stats.inactive_user_accounts }}</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Disabled accounts</p>
+        </div>
+
+        <!-- 4. Currently Logged-in Users -->
+        <div class="bg-white p-4 rounded-2xl border border-teal-200 bg-teal-50/30 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between text-teal-600 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-teal-800">Active Now</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            </div>
+            <div class="text-2xl font-black text-teal-900">{{ stats.currently_logged_in_users }}</div>
+            <p class="text-[10px] text-teal-700 font-semibold mt-0.5">Live sessions</p>
+        </div>
+
+        <!-- 5. Total Successful Logins -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Successful</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+            </div>
+            <div class="text-2xl font-black text-slate-900">{{ stats.total_successful_logins }}</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Total sessions</p>
+        </div>
+
+        <!-- 6. Total Failed Login Attempts -->
+        <div class="bg-white p-4 rounded-2xl border border-rose-100 bg-rose-50/20 shadow-sm">
+            <div class="flex items-center justify-between text-rose-500 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Failed Logins</span>
+                <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-500"></i>
+            </div>
+            <div class="text-2xl font-black text-rose-700">{{ stats.total_failed_logins }}</div>
+            <p class="text-[10px] text-rose-500 font-medium mt-0.5">Rejected attempts</p>
+        </div>
+
+        <!-- 7. Users Logged In Today -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Today</span>
+                <i data-lucide="calendar" class="w-4 h-4 text-indigo-500"></i>
+            </div>
+            <div class="text-2xl font-black text-indigo-900">{{ stats.users_logged_in_today }}</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Distinct users</p>
+        </div>
+    </div>
+
+    <!-- Filters & Search Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <form method="GET" class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div class="relative flex-1 sm:w-72">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                <input type="text" name="search" value="{{ search }}" placeholder="Search user, email, IP..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30">
+            </div>
+
+            <select name="status" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+                <option value="LOGGED_OUT" {% if status_filter == 'LOGGED_OUT' %}selected{% endif %}>Logged Out</option>
+                <option value="FAILED" {% if status_filter == 'FAILED' %}selected{% endif %}>Failed</option>
+            </select>
+
+            <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition">
+                Filter
+            </button>
+            {% if search or status_filter %}
+            <a href="{% url 'accounts:login_activity' %}" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition">
+                Reset
+            </a>
+            {% endif %}
+        </form>
+
+        <span class="text-xs font-bold text-slate-400 whitespace-nowrap">
+            Showing {{ logs|length }} Activity Records
+        </span>
+    </div>
+
+    <!-- Section 5: Exact Login Activity Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="list" class="w-5 h-5 text-teal-600"></i>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Session Login Audit Stream</h3>
+                    <p class="text-xs text-slate-500">Each login session is tracked independently with full status life-cycle</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                    Live DB Records
+                </span>
+                {% if logs %}
+                <form method="POST" onsubmit="return confirm('Are you sure you want to delete and clear all login audit logs?');" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="clear_all">
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50/80 text-slate-500 uppercase text-[11px] font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3.5 px-6">User Name</th>
+                        <th class="py-3.5 px-6">Email</th>
+                        <th class="py-3.5 px-6">Role</th>
+                        <th class="py-3.5 px-6">Login Date</th>
+                        <th class="py-3.5 px-6">Login Time</th>
+                        <th class="py-3.5 px-6">Last Activity</th>
+                        <th class="py-3.5 px-6">Logout Time</th>
+                        <th class="py-3.5 px-6 text-center">Status</th>
+                        <th class="py-3.5 px-6 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                    {% for log in logs %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <!-- User Name -->
+                        <td class="py-3.5 px-6">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-full {% if log.status == 'ACTIVE' %}bg-teal-100 text-teal-800{% elif log.status == 'LOGGED_OUT' %}bg-slate-100 text-slate-700{% else %}bg-rose-100 text-rose-700{% endif %} font-bold flex items-center justify-center text-xs shrink-0">
+                                    {{ log.get_user_display_name|first|upper }}
+                                </div>
+                                <div>
+                                    <span class="font-bold text-slate-900 block leading-tight">{{ log.get_user_display_name }}</span>
+                                    {% if log.user %}
+                                    <span class="text-[10px] text-slate-400 font-mono">@{{ log.user.username }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Email -->
+                        <td class="py-3.5 px-6 text-xs text-slate-600 font-mono">
+                            {{ log.get_user_email }}
+                        </td>
+
+                        <!-- Role -->
+                        <td class="py-3.5 px-6">
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
+                                {{ log.role|default:"Unauthenticated" }}
+                            </span>
+                        </td>
+
+                        <!-- Login Date -->
+                        <td class="py-3.5 px-6 font-mono text-xs text-slate-700">
+                            {{ log.login_time|date:"Y-m-d" }}
+                        </td>
+
+                        <!-- Login Time -->
+                        <td class="py-3.5 px-6 font-mono text-xs font-bold text-slate-800">
+                            {{ log.login_time|time:"H:i:s" }}
+                        </td>
+
+                        <!-- Last Activity -->
+                        <td class="py-3.5 px-6 font-mono text-xs text-slate-600">
+                            {% if log.last_activity %}
+                                {{ log.last_activity|time:"H:i:s" }} <span class="text-[10px] text-slate-400">({{ log.last_activity|timesince }} ago)</span>
+                            {% else %}
+                                <span class="text-slate-400 italic">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Logout Time -->
+                        <td class="py-3.5 px-6 font-mono text-xs">
+                            {% if log.logout_time %}
+                                <span class="text-slate-700">{{ log.logout_time|time:"H:i:s" }}</span>
+                            {% elif log.status == 'ACTIVE' %}
+                                <span class="text-teal-600 font-semibold flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping"></span> Active Now
+                                </span>
+                            {% else %}
+                                <span class="text-slate-400">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Status: Active, Logged Out, Failed -->
+                        <td class="py-3.5 px-6 text-center">
+                            {% if log.status == 'ACTIVE' %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                            </span>
+                            {% elif log.status == 'LOGGED_OUT' %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                Logged Out
+                            </span>
+                            {% elif log.status == 'FAILED' %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Failed
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Action: Delete Record -->
+                        <td class="py-3.5 px-6 text-center">
+                            <form method="POST" onsubmit="return confirm('Delete this login activity record?');" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_one">
+                                <input type="hidden" name="log_id" value="{{ log.id }}">
+                                <button type="submit" title="Delete record" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="py-12 text-center text-slate-400 text-sm">
+                            <i data-lucide="shield-alert" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                            No login activity matching the current criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

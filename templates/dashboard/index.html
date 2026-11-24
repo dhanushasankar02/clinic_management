@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Smart Clinic Automation & Hospital OS{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Role Context & Demo Switcher Bar -->
+    <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-sm border border-slate-700/80 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center font-bold">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-teal-400">Current Session:</span>
+                    <span class="text-sm font-extrabold text-white">
+                        {% if request.user.is_authenticated %}
+                            {{ request.user.get_full_name|default:request.user.username }} ({{ current_user_role_display }})
+                        {% else %}
+                            Guest Mode
+                        {% endif %}
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-300">
+                    {% if is_admin %}
+                        <strong>Administrator Privileges:</strong> Full access to all clinical records, financial collections, staff management, and system settings.
+                    {% elif is_doctor %}
+                        <strong>Doctor View:</strong> Filtered to your clinical queue, active consultations, diagnostic lab tests, and prescriptions.
+                    {% elif is_receptionist %}
+                        <strong>Reception View:</strong> Focused on live token queue, check-in, patient registration, and visit slips.
+                    {% else %}
+                        <strong>Staff View:</strong> Operating under role-based clinical permissions. Financial ledgers are restricted to Administrators.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick Switch Roles for live demo / testing -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[10px] uppercase font-bold text-slate-400 mr-1 hidden sm:inline">Switch Role:</span>
+            <a href="{% url 'accounts:login' %}?demo=admin" class="px-2.5 py-1 rounded-lg text-xs font-bold transition {% if is_admin %}bg-teal-500 text-white shadow-sm{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Admin
+            </a>
+            <a href="{% url 'accounts:login' %}?demo=doctor" class="px-2.5 py-1 rounded-lg text-xs font-bold transition {% if is_doctor %}bg-teal-500 text-white shadow-sm{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Doctor
+            </a>
+            <a href="{% url 'accounts:login' %}?demo=reception" class="px-2.5 py-1 rounded-lg text-xs font-bold transition {% if is_receptionist %}bg-teal-500 text-white shadow-sm{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Reception
+            </a>
+            <a href="{% url 'accounts:login' %}?demo=labtech" class="px-2.5 py-1 rounded-lg text-xs font-bold transition {% if is_lab_tech %}bg-teal-500 text-white shadow-sm{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Lab
+            </a>
+            <a href="{% url 'accounts:login' %}?demo=pharmacist" class="px-2.5 py-1 rounded-lg text-xs font-bold transition {% if is_pharmacist %}bg-teal-500 text-white shadow-sm{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Pharmacy
+            </a>
+            <a href="{% url 'accounts:login' %}?demo=accountant" class="px-2.5 py-1 rounded-lg text-xs font-bold transition {% if is_accountant %}bg-teal-500 text-white shadow-sm{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                Accounts
+            </a>
+        </div>
+    </div>
+
+    <!-- ADMIN EXCLUSIVE: Comprehensive Financial & Management Control Center -->
+    {% if is_admin %}
+    <div class="bg-white rounded-3xl p-6 border-2 border-teal-500/30 shadow-md shadow-teal-500/5 space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
+                <h3 class="text-base font-black text-slate-900 tracking-tight">Admin Executive Command & Member Login Oversight</h3>
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'accounts:users_list' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition">
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i> Manage Staff & Logins ({{ stats.staff_users_count }})
+                </a>
+                <a href="{% url 'reports:dashboard' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold transition">
+                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> Detailed Financials &rarr;
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 rounded-2xl bg-teal-50/60 border border-teal-100 flex flex-col justify-between h-full overflow-hidden">
+                <span class="text-xs font-bold uppercase tracking-wider text-teal-800 truncate block">Total Collections</span>
+                <div class="text-2xl lg:text-3xl font-black text-teal-900 mt-1 truncate" title="₹{{ stats.lifetime_revenue|floatformat:2 }}">₹{{ stats.lifetime_revenue|floatformat:2 }}</div>
+                <p class="text-[11px] text-teal-700 mt-1 font-medium truncate">Realized revenue to date</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex flex-col justify-between h-full overflow-hidden">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 truncate block">Month-to-Date Revenue</span>
+                <div class="text-2xl lg:text-3xl font-black text-emerald-900 mt-1 truncate" title="₹{{ stats.month_revenue|floatformat:2 }}">₹{{ stats.month_revenue|floatformat:2 }}</div>
+                <p class="text-[11px] text-emerald-700 mt-1 font-medium truncate">Current calendar month</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-rose-50/60 border border-rose-100 flex flex-col justify-between h-full overflow-hidden">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-800 truncate block" title="Total Outstanding Receivables">Outstanding Receivables</span>
+                <div class="text-2xl lg:text-3xl font-black text-rose-900 mt-1 truncate" title="₹{{ stats.total_outstanding|floatformat:2 }}">₹{{ stats.total_outstanding|floatformat:2 }}</div>
+                <p class="text-[11px] text-rose-700 mt-1 font-medium truncate">{{ stats.total_invoices_count }} total patient invoices</p>
+            </div>
+            <!-- Member Login Tracker Card -->
+            <div class="p-4 rounded-2xl bg-slate-900 text-white shadow-sm border border-slate-800 flex flex-col justify-between h-full overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-teal-400 truncate">Members Logged In</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+                </div>
+                <div class="text-2xl lg:text-3xl font-black text-white mt-1 truncate">
+                    {{ distinct_logged_in_count }} <span class="text-base font-normal text-slate-400">/ {{ total_members_count }}</span>
+                </div>
+                <a href="{% url 'accounts:users_list' %}" class="text-[11px] font-bold text-teal-300 hover:text-teal-200 mt-1 flex items-center gap-1 truncate">
+                    View Login Audit Log &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Member Login Stream (Chronological - Latest First) -->
+        {% if recent_login_logs %}
+        <div class="pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-teal-600"></i> Recent Member Logins (Chronological Order - Latest First)
+                </span>
+                <a href="{% url 'accounts:users_list' %}" class="text-xs font-semibold text-teal-600 hover:underline">All Audit Records</a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {% for log in recent_login_logs %}
+                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2 truncate">
+                        <div class="w-6 h-6 rounded-full {% if log.status == 'FAILED' %}bg-rose-100 text-rose-700{% else %}bg-teal-100 text-teal-800{% endif %} font-bold flex items-center justify-center text-[10px] shrink-0">
+                            {{ log.get_user_display_name|first|upper }}
+                        </div>
+                        <div class="truncate">
+                            <span class="font-bold text-slate-800 block truncate">{{ log.get_user_display_name }}</span>
+                            <span class="text-[10px] text-teal-600 font-semibold">{{ log.role }}</span>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 ml-2">
+                        <span class="font-mono text-[10px] text-slate-500 block">{{ log.login_time|date:"h:i A" }}</span>
+                        <span class="text-[9px] text-slate-400">{{ log.login_time|date:"M d" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Operational KPI Cards (6 Grid) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Queue Waiting -->
+        <a href="{% url 'appointments:queue_board' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600 block">In Queue</span>
+            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ stats.waiting_queue_count }}</div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Waiting patients</span>
+        </a>
+
+        <!-- Today Visits -->
+        <a href="{% url 'appointments:list' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-teal-600 block">Today Visits</span>
+            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ stats.today_appointments_count }}</div>
+            <span class="text-[10px] text-teal-600 font-semibold mt-1 block">{{ stats.completed_today }} completed</span>
+        </a>
+
+        <!-- Total Patients -->
+        <a href="{% url 'patients:list' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Total Patients</span>
+            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ stats.total_patients }}</div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Active MRN profiles</span>
+        </a>
+
+        <!-- Today Collections (Admin/Accounts only) or Total Consultations -->
+        {% if can_view_finance %}
+        <a href="{% url 'billing:invoice_list' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">Today Collections</span>
+            <div class="text-2xl font-extrabold text-emerald-600 mt-1">₹{{ stats.today_revenue|floatformat:2 }}</div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Collected today</span>
+        </a>
+        {% else %}
+        <a href="{% url 'consultations:list' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">Consultations</span>
+            <div class="text-2xl font-extrabold text-emerald-600 mt-1">{{ stats.total_consultations }}</div>
+            <span class="text-[10px] text-slate-400 mt-1 block">Completed records</span>
+        </a>
+        {% endif %}
+
+        <!-- Pending Lab Tests -->
+        <a href="{% url 'laboratory:order_list' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 block">Lab Testing</span>
+            <div class="text-2xl font-extrabold text-indigo-700 mt-1">{{ stats.pending_lab_count }}</div>
+            <span class="text-[10px] text-indigo-600 font-semibold mt-1 block">Pending orders</span>
+        </a>
+
+        <!-- Low Stock Medicines -->
+        <a href="{% url 'pharmacy:dashboard' %}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-rose-400 transition block">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500 block">Pharmacy Alerts</span>
+            <div class="text-2xl font-extrabold text-rose-600 mt-1">{{ stats.low_stock_count }}</div>
+            <span class="text-[10px] text-rose-500 font-semibold mt-1 block">Low stock items</span>
+        </a>
+    </div>
+
+    <!-- Main Grid: Appointments & Consultations + Doctors -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Today's Schedule & Consultations (2 cols) -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Appointments Queue Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-900">Today's Appointment Schedule</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ today|date:"l, F j, Y" }}</p>
+                    </div>
+                    <a href="{% url 'appointments:list' %}" class="text-xs font-semibold text-teal-600 hover:text-teal-700">View All Appointments &rarr;</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-3">Token / Patient</th>
+                                <th class="px-6 py-3">Doctor</th>
+                                <th class="px-6 py-3">Time</th>
+                                <th class="px-6 py-3">Source</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for appt in today_appointments %}
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="px-6 py-3.5 font-medium text-slate-900">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">{{ appt.token_number }}</span>
+                                        <span>{{ appt.patient.first_name }} {{ appt.patient.last_name }}</span>
+                                    </div>
+                                    <span class="text-[11px] text-slate-400 font-mono">{{ appt.patient.mrn }}</span>
+                                </td>
+                                <td class="px-6 py-3.5 text-xs text-slate-600">Dr. {{ appt.doctor.name }}</td>
+                                <td class="px-6 py-3.5 text-xs font-mono text-slate-500">{{ appt.appointment_time|time:"H:i" }}</td>
+                                <td class="px-6 py-3.5">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold {% if appt.source == 'WHATSAPP' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-slate-100 text-slate-700{% endif %}">
+                                        {{ appt.source }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-3.5">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold 
+                                        {% if appt.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                        {% elif appt.status == 'WAITING' %}bg-amber-50 text-amber-700 border border-amber-200
+                                        {% elif appt.status == 'IN_CONSULTATION' %}bg-blue-50 text-blue-700 border border-blue-200
+                                        {% elif appt.status == 'CANCELLED' %}bg-rose-50 text-rose-700 border border-rose-200
+                                        {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                        {{ appt.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-3.5 text-right">
+                                    {% if appt.status == 'WAITING' or appt.status == 'CHECKED_IN' %}
+                                    <a href="{% url 'consultations:create' %}?patient_id={{ appt.patient.pk }}&appointment_id={{ appt.pk }}" class="inline-flex items-center gap-1 px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                                        <i data-lucide="play" class="w-3 h-3"></i> Start
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'appointments:print_slip' appt.pk %}" target="_blank" class="text-xs text-teal-600 hover:underline font-semibold">Slip</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-xs">
+                                    No appointments scheduled for today yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Consultations Feed -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-900">Recent Doctor Consultations</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Clinical notes, diagnosis and prescriptions</p>
+                    </div>
+                    <a href="{% url 'consultations:list' %}" class="text-xs font-semibold text-teal-600 hover:text-teal-700">View All &rarr;</a>
+                </div>
+
+                <div class="divide-y divide-slate-100">
+                    {% for c in recent_consultations %}
+                    <div class="p-4 flex items-center justify-between hover:bg-slate-50/60 transition">
+                        <div>
+                            <span class="font-bold text-slate-900 text-sm">{{ c.patient.first_name }} {{ c.patient.last_name }}</span>
+                            <span class="text-xs text-slate-400 ml-2">by Dr. {{ c.doctor.name }}</span>
+                            <p class="text-xs font-medium text-slate-600 mt-0.5">{{ c.diagnosis }}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+                                {{ c.prescriptions.count }} Rx
+                            </span>
+                            <a href="{% url 'consultations:detail' c.pk %}" class="text-xs font-semibold text-teal-600 hover:underline">
+                                View &rarr;
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center text-xs text-slate-400">No consultations logged yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar (Doctors & WhatsApp Bot) -->
+        <div class="space-y-6">
+            <!-- Doctors Widget -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-900 text-sm">On-Duty Doctors</h3>
+                    <a href="{% url 'doctors:list' %}" class="text-xs font-semibold text-teal-600 hover:text-teal-700">View All</a>
+                </div>
+                <div class="space-y-3">
+                    {% for doc in doctors %}
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100/70 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-teal-100 text-teal-700 font-bold flex items-center justify-center text-xs">
+                                Dr
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Dr. {{ doc.name }}</p>
+                                <p class="text-[11px] text-teal-600">{{ doc.specialty.name|default:"General" }}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">₹{{ doc.consultation_fee }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- WhatsApp Bot Quick Card -->
+            <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-6 rounded-2xl shadow-md shadow-teal-700/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white">
+                        <i data-lucide="bot" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm">Automated WhatsApp Agent</h4>
+                        <p class="text-xs text-emerald-100">Live 24/7 Patient Concierge</p>
+                    </div>
+                </div>
+                <p class="text-xs text-emerald-50/90 mt-3 leading-relaxed">
+                    Patients can query doctor schedules, check consultation fees, and self-book appointments directly over WhatsApp.
+                </p>
+                <div class="mt-4 pt-4 border-t border-white/15 flex items-center justify-between">
+                    <span class="text-xs text-emerald-200">Webhook: <code class="bg-black/20 px-1 py-0.5 rounded text-[10px]">/communication/webhook/</code></span>
+                    <a href="{% url 'chatbot:test' %}" class="inline-flex items-center gap-1 bg-white text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition shadow-sm">
+                        Test Simulator &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Registration | {{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4 antialiased relative overflow-x-hidden">
+
+    <!-- Glowing background accents -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="w-full max-w-2xl relative z-10 my-8">
+        <!-- Brand Header -->
+        <div class="text-center mb-6">
+            <div class="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 items-center justify-center text-white shadow-xl shadow-teal-500/20 mb-3 border border-white/20">
+                <i data-lucide="cross" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</h1>
+            <p class="text-xs text-teal-400 font-semibold tracking-wider uppercase mt-1">Patient Portal &bull; Self Registration</p>
+        </div>
+
+        <!-- Registration Card -->
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/50 space-y-6">
+            <div>
+                <h2 class="text-xl font-bold text-white tracking-tight">Create Your Patient Account</h2>
+                <p class="text-xs text-slate-400 mt-1">Register to book online appointments, view diagnostic lab results, and access medical records 24/7.</p>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+            <div class="space-y-2">
+                {% for message in messages %}
+                <div class="p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 {% if message.tags == 'error' %}bg-rose-500/15 border border-rose-500/30 text-rose-300{% else %}bg-teal-500/15 border border-teal-500/30 text-teal-300{% endif %}">
+                    <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'portal:register' %}" class="space-y-4">
+                {% csrf_token %}
+
+                <!-- Full Name -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">First Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="first_name" required placeholder="e.g. Rahul" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Last Name</label>
+                        <input type="text" name="last_name" placeholder="e.g. Verma" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                    </div>
+                </div>
+
+                <!-- Contact & DOB -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Mobile Phone <span class="text-rose-500">*</span></label>
+                        <input type="text" name="phone" required placeholder="e.g. +91 98765 43210" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Date of Birth</label>
+                        <input type="date" name="date_of_birth" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Gender</label>
+                        <select name="gender" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Email & Address -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                        <input type="email" name="email" placeholder="patient@example.com" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Residential Address</label>
+                        <input type="text" name="address" placeholder="Street, City, Pin" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                    </div>
+                </div>
+
+                <!-- Username & Password -->
+                <div class="pt-2 border-t border-slate-800">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-teal-400 mb-3 flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Portal Login Credentials
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username <span class="text-rose-500">*</span></label>
+                            <input type="text" name="username" required placeholder="e.g. rahul.verma" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 font-mono focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password <span class="text-rose-500">*</span></label>
+                            <input type="password" name="password" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Confirm Password <span class="text-rose-500">*</span></label>
+                            <input type="password" name="confirm_password" required minlength="6" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-teal-600/30 transition flex items-center justify-center gap-2">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> Complete Registration & Sign In
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center pt-4 border-t border-slate-800 text-xs text-slate-400">
+                Already registered with the clinic?
+                <a href="{% url 'accounts:login' %}" class="text-teal-400 font-bold hover:underline ml-1">Sign In to your account &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-6 text-xs text-slate-500">
+            <p>&copy; 2026 {{ clinic.name|default:"Apex Multi-Specialty Clinic" }} &bull; Protected Health Information Portal</p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

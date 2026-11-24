@@ -1,0 +1,147 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Lab Report {{ order.order_number }} | Patient Portal{% endblock %}
+{% block page_title %}Lab Report Details{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-4">
+
+    <!-- Action Bar -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'portal:my_lab_reports' %}" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-purple-600">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Lab Reports
+        </a>
+        <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-sm inline-flex items-center gap-2">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Investigation Report
+        </button>
+    </div>
+
+    <!-- Printable Report Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 print:p-0 print:border-none print:shadow-none" id="labReportSlip">
+        
+        <!-- Header Clinic Info -->
+        <div class="flex justify-between items-start pb-6 border-b-2 border-purple-900 gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-8 h-8 rounded-lg bg-purple-700 text-white flex items-center justify-center font-bold">
+                        <i data-lucide="cross" class="w-5 h-5"></i>
+                    </div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</h1>
+                </div>
+                <p class="text-xs text-slate-500">Department of Pathology & Clinical Laboratory Services</p>
+                <p class="text-xs text-slate-500">{{ clinic.address|default:"124 Healthcare Boulevard, Medical District" }} | Tel: {{ clinic.phone|default:"+1 (555) 234-5678" }}</p>
+            </div>
+            <div class="text-right">
+                <span class="inline-block px-3 py-1 rounded bg-purple-50 border border-purple-200 text-purple-900 text-xs font-black uppercase tracking-wider mb-1">Diagnostic Report</span>
+                <p class="text-xs font-bold text-slate-800">Order ID: {{ order.order_number }}</p>
+                <p class="text-xs text-slate-500">Ordered: {{ order.created_at|date:"F d, Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Doctor & Patient Summary -->
+        <div class="grid grid-cols-2 gap-6 py-5 border-b border-slate-200 text-xs">
+            <div>
+                <p class="text-[10px] uppercase font-bold text-slate-400">Patient Information</p>
+                <h3 class="text-sm font-black text-slate-800 mt-0.5">{{ patient.name }} ({{ patient.patient_id }})</h3>
+                <p class="text-slate-600">Age: {{ patient.age|default:"-" }} | Gender: {{ patient.gender|title }} | Blood Group: <strong class="text-rose-600">{{ patient.blood_group|default:"N/A" }}</strong></p>
+                <p class="text-slate-500 mt-0.5">Phone: {{ patient.phone }}</p>
+            </div>
+            <div>
+                <p class="text-[10px] uppercase font-bold text-slate-400">Clinical Reference</p>
+                <h3 class="text-sm font-black text-slate-800 mt-0.5">{% if order.doctor %}Dr. {{ order.doctor.name }}{% else %}Hospital In-House Referral{% endif %}</h3>
+                <p class="text-slate-600">Priority: <strong class="uppercase text-purple-700">{{ order.priority }}</strong></p>
+                <p class="text-slate-500 mt-0.5">Report Status: <strong class="text-emerald-700 uppercase">{{ order.get_status_display }}</strong></p>
+            </div>
+        </div>
+
+        <!-- Investigation Findings Table -->
+        <div class="py-5 border-b border-slate-200">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">Investigation Parameters & Findings</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b-2 border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
+                            <th class="py-2.5">Test / Parameter</th>
+                            <th class="py-2.5">Category</th>
+                            <th class="py-2.5">Observed Value</th>
+                            <th class="py-2.5">Biological Ref Range</th>
+                            <th class="py-2.5">Unit</th>
+                            <th class="py-2.5 text-center">Status Flag</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in order.items.all %}
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="py-3 font-bold text-slate-800">
+                                {{ item.test.name }}
+                                <span class="block text-[10px] font-mono text-slate-400">{{ item.test.code }} · {{ item.test.sample_type }}</span>
+                            </td>
+                            <td class="py-3 text-slate-500">{{ item.test.get_category_display }}</td>
+                            <td class="py-3 font-mono font-black text-sm text-slate-900">
+                                {{ item.result_value|default:"Pending analysis" }}
+                            </td>
+                            <td class="py-3 font-mono text-slate-600">{{ item.test.normal_range|default:"Standard" }}</td>
+                            <td class="py-3 text-slate-500 font-mono">{{ item.test.unit|default:"-" }}</td>
+                            <td class="py-3 text-center">
+                                {% if item.flag == 'NORMAL' %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Normal</span>
+                                {% elif item.flag == 'HIGH' or item.flag == 'CRITICAL' %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">High / Alert</span>
+                                {% elif item.flag == 'LOW' %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Low</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if item.technician_remarks %}
+                        <tr class="bg-slate-50/30">
+                            <td colspan="6" class="py-2 px-3 text-[11px] text-slate-500 italic">
+                                Remark: {{ item.technician_remarks }} (Tested at: {{ item.tested_at|date:"M d, Y h:i A" }})
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="py-6 text-center text-slate-400">No test parameters found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if order.clinical_notes %}
+        <div class="py-4 border-b border-slate-200 text-xs">
+            <p class="text-[10px] uppercase font-bold text-slate-400">Clinical Indication & Notes</p>
+            <p class="text-xs text-slate-700 mt-1">{{ order.clinical_notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Verification Sign-off -->
+        <div class="pt-8 flex justify-between items-end text-xs">
+            <div class="text-[10px] text-slate-400 space-y-0.5">
+                <p>Pathology Laboratory Automated Information System</p>
+                <p>All clinical results are reviewed and verified prior to release.</p>
+            </div>
+            <div class="text-center">
+                <div class="h-10 border-b border-slate-400 w-48 mb-1 flex items-end justify-center">
+                    <span class="text-xs font-bold text-slate-700 italic">Verified Laboratory In-Charge</span>
+                </div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Chief Pathologist / Lab Tech</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+@media print {
+    aside, header, nav, button, a { display: none !important; }
+    main { margin-left: 0 !important; padding: 0 !important; }
+    body { background: white !important; }
+}
+</style>
+{% endblock %}

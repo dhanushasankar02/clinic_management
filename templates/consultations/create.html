@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block title %}Doctor Consultation & EMR Encounter | Smart Clinic{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="stethoscope" class="w-4 h-4"></i> Doctor Encounter Desk
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Clinical Consultation & Doctor Checkup</h1>
+            <p class="text-sm text-slate-500">Record comprehensive patient encounter, vitals, diagnosis, prescriptions, and route to Lab or Pharmacy.</p>
+        </div>
+        <a href="{% url 'consultations:list' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to List
+        </a>
+    </div>
+
+    <!-- Clinical Workflow Order Stepper -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="git-commit" class="w-4 h-4 text-teal-600"></i> Clinic Patient Flow Order:
+            </span>
+            <div class="flex items-center gap-2 text-xs flex-wrap font-semibold">
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 1. Register Patient
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 2. Reception & Token
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-teal-600 text-white shadow-sm flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> 3. Doctor Checkup (Active)
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                    4. Lab (If Wanted) OR Pharmacy (If Not)
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Consultation Form -->
+    <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        {% if selected_appointment %}
+        <input type="hidden" name="appointment" value="{{ selected_appointment.pk }}">
+        {% endif %}
+
+        <!-- 1. Patient & Doctor Context -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Patient <span class="text-rose-500">*</span></label>
+                <select name="patient" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    <option value="">-- Select Patient --</option>
+                    {% for p in patients %}
+                    <option value="{{ p.pk }}" {% if selected_patient and selected_patient.pk == p.pk %}selected{% elif selected_appointment and selected_appointment.patient.pk == p.pk %}selected{% endif %}>
+                        {{ p.full_name }} (MRN: {{ p.patient_id|default:p.id }} | {{ p.phone }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if selected_patient and selected_patient.allergies %}
+                <div class="mt-2 text-xs p-2.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-500 shrink-0"></i>
+                    <span><strong>Allergy Alert:</strong> {{ selected_patient.allergies }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Attending Doctor <span class="text-rose-500">*</span></label>
+                <select name="doctor" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
+                    <option value="">-- Select Doctor --</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.pk }}" {% if selected_appointment and selected_appointment.doctor.pk == d.pk %}selected{% endif %}>
+                        Dr. {{ d.name }} ({{ d.specialty.name|default:"General Medicine" }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- 2. Vitals Triage Section -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i data-lucide="activity" class="w-4 h-4 text-teal-600"></i> Vital Signs & Physical Measurements
+            </h3>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Blood Pressure</label>
+                    <input type="text" name="blood_pressure" placeholder="e.g. 120/80" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Pulse Rate (bpm)</label>
+                    <input type="number" min="0" name="pulse" placeholder="e.g. 74" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Temperature (°F)</label>
+                    <input type="number" step="0.1" min="0" name="temperature" placeholder="e.g. 98.6" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">SpO2 Oxygen (%)</label>
+                    <input type="number" min="0" max="100" name="spo2" placeholder="e.g. 98" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Respiratory Rate</label>
+                    <input type="number" min="0" name="respiratory_rate" placeholder="e.g. 16" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Height (cm)</label>
+                    <input type="number" step="0.1" min="0" id="height_cm" name="height_cm" placeholder="e.g. 172" oninput="calcBMI()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Weight (kg)</label>
+                    <input type="number" step="0.1" min="0" id="weight_kg" name="weight_kg" placeholder="e.g. 68" oninput="calcBMI()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">BMI (kg/m²)</label>
+                    <input type="text" id="bmi_display" readonly placeholder="Auto" class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Clinical Examination & Diagnosis -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-teal-600"></i> Clinical Assessment & Diagnosis
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Chief Complaints & History <span class="text-rose-500">*</span></label>
+                    <textarea name="chief_complaints" rows="3" required placeholder="Patient symptoms, onset, severity..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Physical Examination Findings</label>
+                    <textarea name="examination_notes" rows="3" placeholder="General, systemic, cardiovascular, respiratory examination..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Diagnosis / Clinical Impression <span class="text-rose-500">*</span></label>
+                    <textarea name="diagnosis" rows="2" required placeholder="Confirmed or provisional diagnosis..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-medium"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Treatment Plan & Patient Advice</label>
+                    <textarea name="treatment_plan" rows="2" placeholder="Lifestyle modifications, dietary restrictions..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Recommended Follow-up Date</label>
+                    <input type="date" name="follow_up_date" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Internal Doctor Clinical Notes (Private)</label>
+                    <input type="text" name="clinical_notes" placeholder="Confidential clinical notes..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Prescription Generator (Rx) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                    <span class="text-xl font-serif text-teal-700 italic font-black">℞</span> Prescriptions & Medication Chart
+                </h3>
+                <button type="button" onclick="addMedRow()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold transition">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Medicine
+                </button>
+            </div>
+
+            <!-- Dynamic Medicine Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600" id="rxTable">
+                    <thead class="bg-slate-50 text-slate-500 uppercase font-semibold">
+                        <tr>
+                            <th class="py-2.5 px-3">Medicine / Brand Name</th>
+                            <th class="py-2.5 px-3">Dosage</th>
+                            <th class="py-2.5 px-3">Route</th>
+                            <th class="py-2.5 px-3">Frequency</th>
+                            <th class="py-2.5 px-3">Days</th>
+                            <th class="py-2.5 px-3">Instructions</th>
+                            <th class="py-2.5 px-2 text-center"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="rxBody">
+                        <!-- Initial Row -->
+                        <tr>
+                            <td class="p-2">
+                                <input type="text" name="med_name[]" list="medicines_list" placeholder="e.g. Dolo 650" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium">
+                            </td>
+                            <td class="p-2">
+                                <input type="text" name="med_dosage[]" value="1 tablet" class="w-24 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            </td>
+                            <td class="p-2">
+                                <select name="med_route[]" class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                                    <option value="Oral">Oral</option>
+                                    <option value="Topical">Topical</option>
+                                    <option value="IV">IV</option>
+                                    <option value="IM">IM</option>
+                                    <option value="Inhalation">Inhalation</option>
+                                    <option value="Drops">Drops</option>
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" name="med_frequency[]" value="1-0-1" placeholder="e.g. 1-0-1" class="w-24 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="med_duration[]" value="5" class="w-16 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            </td>
+                            <td class="p-2">
+                                <input type="text" name="med_instructions[]" value="After food" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            </td>
+                            <td class="p-2 text-center">
+                                <button type="button" onclick="removeMedRow(this)" class="text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Datalist for autocomplete -->
+            <datalist id="medicines_list">
+                {% for m in available_medicines %}
+                <option value="{{ m.name }} ({{ m.strength }})">
+                {% endfor %}
+            </datalist>
+        </div>
+
+        <!-- 5. Lab Investigation Orders (Decision: Go to Lab vs Go to Pharmacy) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        <i data-lucide="test-tube-2" class="w-4 h-4 text-teal-600"></i> Next Step: Diagnostic Lab Tests (Optional)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">If you want lab tests, select them below and patient goes to Laboratory. If not, patient goes directly to Pharmacy.</p>
+                </div>
+                <div class="inline-flex rounded-xl p-1 bg-slate-100 text-xs font-semibold shrink-0">
+                    <button type="button" id="tabNoLab" onclick="setLabMode(false)" class="px-3 py-1.5 rounded-lg text-slate-600 transition">
+                        💊 No Lab (Skip to Pharmacy)
+                    </button>
+                    <button type="button" id="tabWantLab" onclick="setLabMode(true)" class="px-3 py-1.5 rounded-lg bg-white text-teal-700 shadow-sm transition">
+                        🧪 Want Lab (Send to Lab)
+                    </button>
+                </div>
+            </div>
+
+            <div id="labTestsGrid" class="space-y-3">
+                <p class="text-xs font-medium text-slate-600">Select diagnostic test(s) to order:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {% for test in lab_tests %}
+                    <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
+                        <input type="checkbox" name="lab_tests[]" value="{{ test.pk }}" onchange="updateLabSubmitState()" class="lab-test-check w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
+                        <div class="text-xs">
+                            <div class="font-bold text-slate-800">{{ test.name }}</div>
+                            <div class="text-[11px] text-slate-400">{{ test.get_category_display }} | ₹{{ test.price }}</div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="noLabNotice" class="hidden p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2.5">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                <span><strong>No laboratory tests selected.</strong> Upon saving this checkup, the patient will immediately proceed to the <strong>Pharmacy</strong> for medication dispensing.</span>
+            </div>
+        </div>
+
+        <!-- Submit Bar with Clear Destinations -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200/80">
+            <a href="{% url 'appointments:list' %}" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium text-sm transition">Cancel</a>
+            <div class="flex flex-wrap items-center justify-end gap-3 w-full sm:w-auto">
+                <button type="submit" name="target_destination" value="pharmacy" onclick="clearLabSelection()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 active:scale-95">
+                    <i data-lucide="pill" class="w-4 h-4"></i>
+                    Don't Want Lab &rarr; Go to Pharmacy 💊
+                </button>
+                <button type="submit" name="target_destination" value="lab" id="btnGoToLab" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 active:scale-95">
+                    <i data-lucide="test-tube" class="w-4 h-4"></i>
+                    Want Lab &rarr; Go to Laboratory 🧪
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function calcBMI() {
+    const h = parseFloat(document.getElementById('height_cm').value);
+    const w = parseFloat(document.getElementById('weight_kg').value);
+    const display = document.getElementById('bmi_display');
+    if (h > 0 && w > 0) {
+        const hm = h / 100;
+        const bmi = (w / (hm * hm)).toFixed(1);
+        display.value = bmi;
+    } else {
+        display.value = '';
+    }
+}
+
+function addMedRow() {
+    const tbody = document.getElementById('rxBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="p-2">
+            <input type="text" name="med_name[]" list="medicines_list" placeholder="e.g. Paracetamol" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium">
+        </td>
+        <td class="p-2">
+            <input type="text" name="med_dosage[]" value="1 tablet" class="w-24 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+        </td>
+        <td class="p-2">
+            <select name="med_route[]" class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                <option value="Oral">Oral</option>
+                <option value="Topical">Topical</option>
+                <option value="IV">IV</option>
+                <option value="IM">IM</option>
+                <option value="Inhalation">Inhalation</option>
+                <option value="Drops">Drops</option>
+            </select>
+        </td>
+        <td class="p-2">
+            <input type="text" name="med_frequency[]" value="1-0-1" class="w-24 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+        </td>
+        <td class="p-2">
+            <input type="number" name="med_duration[]" value="5" class="w-16 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+        </td>
+        <td class="p-2">
+            <input type="text" name="med_instructions[]" value="After food" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+        </td>
+        <td class="p-2 text-center">
+            <button type="button" onclick="removeMedRow(this)" class="text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    lucide.createIcons();
+}
+
+function removeMedRow(btn) {
+    const row = btn.closest('tr');
+    const tbody = document.getElementById('rxBody');
+    if (tbody.children.length > 1) {
+        row.remove();
+    }
+}
+
+function setLabMode(wantLab) {
+    const grid = document.getElementById('labTestsGrid');
+    const notice = document.getElementById('noLabNotice');
+    const tabNo = document.getElementById('tabNoLab');
+    const tabWant = document.getElementById('tabWantLab');
+    const btnLab = document.getElementById('btnGoToLab');
+
+    if (wantLab) {
+        grid.classList.remove('hidden');
+        notice.classList.add('hidden');
+        tabWant.className = 'px-3 py-1.5 rounded-lg bg-white text-teal-700 shadow-sm transition';
+        tabNo.className = 'px-3 py-1.5 rounded-lg text-slate-600 transition';
+        if (btnLab) btnLab.classList.remove('opacity-50');
+    } else {
+        grid.classList.add('hidden');
+        notice.classList.remove('hidden');
+        tabNo.className = 'px-3 py-1.5 rounded-lg bg-white text-teal-700 shadow-sm transition';
+        tabWant.className = 'px-3 py-1.5 rounded-lg text-slate-600 transition';
+        // Uncheck all lab checkboxes
+        document.querySelectorAll('.lab-test-check').forEach(cb => cb.checked = false);
+    }
+}
+
+function clearLabSelection() {
+    document.querySelectorAll('.lab-test-check').forEach(cb => cb.checked = false);
+}
+
+function updateLabSubmitState() {
+    const anyChecked = Array.from(document.querySelectorAll('.lab-test-check')).some(cb => cb.checked);
+    if (anyChecked) {
+        setLabMode(true);
+    }
+}
+</script>
+{% endblock %}

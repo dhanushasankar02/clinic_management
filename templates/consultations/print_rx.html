@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prescription - {{ consultation.patient.full_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { font-size: 13px; margin: 0; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 p-8 flex justify-center text-slate-800">
+    <div class="no-print fixed top-6 right-6 flex gap-3">
+        <button onclick="window.print()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-5 rounded-lg shadow-md transition">
+            Print Prescription
+        </button>
+        <button onclick="window.close()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg shadow-md transition">
+            Close
+        </button>
+    </div>
+
+    <div class="w-[780px] bg-white p-10 rounded-2xl shadow-xl border border-slate-200 min-h-[950px] flex flex-col justify-between">
+        <div>
+            <!-- Clinic Letterhead -->
+            <div class="flex justify-between items-start border-b-2 border-teal-600 pb-6">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 tracking-tight">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">{{ clinic.address|default:"Tower 4, Healthcare Square, Central Avenue, Bengaluru" }}</p>
+                    <p class="text-xs text-slate-500 font-medium">Phone: {{ clinic.phone|default:"+91 98765 43210" }} | Email: {{ clinic.email|default:"care@clinic.com" }}</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-lg font-bold text-teal-800">Dr. {{ consultation.doctor.name }}</h2>
+                    <p class="text-xs text-slate-600 font-medium">{{ consultation.doctor.qualification }}</p>
+                    <p class="text-xs text-teal-700 font-semibold">{{ consultation.doctor.specialty.name|default:"Specialist Physician" }}</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Reg No: KMC-{{ consultation.doctor.id|add:41200 }}</p>
+                </div>
+            </div>
+
+            <!-- Patient Information Bar -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 my-5 grid grid-cols-4 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-400 font-medium block">Patient Name</span>
+                    <span class="font-bold text-slate-900 text-sm">{{ consultation.patient.full_name }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-medium block">MRN ID / Phone</span>
+                    <span class="font-bold text-teal-700">{{ consultation.patient.patient_id|default:consultation.patient.id }}</span>
+                    <span class="text-slate-600 block">{{ consultation.patient.phone }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-medium block">Age / Gender / Blood</span>
+                    <span class="font-semibold text-slate-800">{{ consultation.patient.age }} yrs / {{ consultation.patient.get_gender_display }} / {{ consultation.patient.blood_group }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-medium block">Date & Time</span>
+                    <span class="font-semibold text-slate-800">{{ consultation.consultation_date|date:"d M Y, h:i A" }}</span>
+                </div>
+            </div>
+
+            <!-- Vitals Bar -->
+            <div class="flex gap-6 py-2 px-4 rounded-lg bg-teal-50/50 border border-teal-100 text-xs text-slate-700 mb-6">
+                <div><strong>BP:</strong> {{ consultation.blood_pressure|default:"120/80" }}</div>
+                <div><strong>Pulse:</strong> {{ consultation.pulse|default:"76" }} bpm</div>
+                <div><strong>Temp:</strong> {{ consultation.temperature|default:"98.6" }} °F</div>
+                <div><strong>SpO2:</strong> {{ consultation.spo2|default:"98" }}%</div>
+                {% if consultation.bmi %}<div><strong>BMI:</strong> {{ consultation.bmi }}</div>{% endif %}
+            </div>
+
+            <!-- Diagnosis & Complaints -->
+            <div class="space-y-3 mb-6 text-xs">
+                <div>
+                    <span class="font-bold uppercase text-slate-400 tracking-wider">Chief Complaints:</span>
+                    <span class="text-slate-800 font-medium ml-2">{{ consultation.chief_complaints }}</span>
+                </div>
+                <div>
+                    <span class="font-bold uppercase text-teal-700 tracking-wider">Diagnosis:</span>
+                    <span class="text-slate-900 font-bold ml-2 text-sm">{{ consultation.diagnosis }}</span>
+                </div>
+            </div>
+
+            <!-- Rx Symbol and Medicines -->
+            <div class="my-6">
+                <div class="text-3xl font-serif font-black text-teal-700 italic mb-3">℞</div>
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-slate-300 text-slate-600 uppercase font-bold text-[11px]">
+                            <th class="py-2.5 px-3">#</th>
+                            <th class="py-2.5 px-3">Medicine Name</th>
+                            <th class="py-2.5 px-3">Dosage / Form</th>
+                            <th class="py-2.5 px-3">Frequency</th>
+                            <th class="py-2.5 px-3">Duration</th>
+                            <th class="py-2.5 px-3">Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 text-slate-800">
+                        {% for rx in consultation.prescriptions.all %}
+                        <tr>
+                            <td class="py-3 px-3 font-bold text-slate-400">{{ forloop.counter }}</td>
+                            <td class="py-3 px-3 font-bold text-slate-900 text-sm">{{ rx.medicine_name }}</td>
+                            <td class="py-3 px-3">{{ rx.dosage }} ({{ rx.route }})</td>
+                            <td class="py-3 px-3 font-bold text-teal-700 text-xs">{{ rx.frequency }}</td>
+                            <td class="py-3 px-3">{{ rx.duration_days }} days</td>
+                            <td class="py-3 px-3 font-medium text-slate-600">{{ rx.instructions }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="py-4 text-center text-slate-400">No oral medications prescribed.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Advice & Followup -->
+            <div class="space-y-3 mt-8 pt-4 border-t border-slate-200 text-xs">
+                {% if consultation.treatment_plan %}
+                <div>
+                    <span class="font-bold uppercase text-slate-500">General Advice:</span>
+                    <p class="text-slate-700 mt-0.5">{{ consultation.treatment_plan }}</p>
+                </div>
+                {% endif %}
+                {% if consultation.follow_up_date %}
+                <div>
+                    <span class="font-bold uppercase text-teal-700">Next Review Date:</span>
+                    <span class="font-bold text-slate-900 ml-1">{{ consultation.follow_up_date|date:"l, F d, Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Signature Block & Footer -->
+        <div class="pt-10 border-t border-slate-200 mt-12 flex justify-between items-end">
+            <div class="text-[11px] text-slate-400">
+                <p>Prescription valid across all verified pharmacies.</p>
+                <p>Emergency Contact: {{ clinic.phone }} | Apex Health Network</p>
+            </div>
+            <div class="text-center">
+                <div class="w-48 border-b border-slate-400 mb-2"></div>
+                <p class="text-xs font-bold text-slate-800">Dr. {{ consultation.doctor.name }}</p>
+                <p class="text-[10px] text-slate-500">Authorized Medical Practitioner Signature</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

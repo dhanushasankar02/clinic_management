@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}WhatsApp Bot Simulator | Smart Clinic Automation{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Interactive WhatsApp Bot Simulator</h2>
+            <p class="text-sm text-slate-500 mt-1">Test real-time patient interactions: instant appointment booking, doctor schedules, and FAQs.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="clearChatFeed()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                Clear Simulator Chat
+            </button>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Bot Engine Online
+            </span>
+        </div>
+    </div>
+
+    <!-- Active Patient Selector Bar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-sm border border-teal-200 shadow-xs">
+                <i data-lucide="user-check" class="w-4 h-4 text-teal-600"></i>
+            </div>
+            <div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Active Simulating Patient</span>
+                <span id="activePatientDisplay" class="font-bold text-slate-800 text-sm">
+                    {% if patients %}{{ patients.0.full_name }} ({{ patients.0.phone }}){% else %}Default Guest{% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <label class="text-xs font-semibold text-slate-600">Switch Patient Profile:</label>
+            <select id="simPatientSelect" onchange="switchSimulatedPatient(this)" class="text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                {% for pat in patients %}
+                <option value="{{ pat.phone }}" data-name="{{ pat.full_name }}" data-email="{{ pat.email }}" {% if forloop.first %}selected{% endif %}>
+                    {{ pat.full_name }} ({{ pat.phone }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Left: Quick Simulation Prompts (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+            <!-- Instructions Card -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                    One-Click Patient Queries
+                </h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Click any action below to trigger that WhatsApp query into the simulator with an <strong>instant reply</strong>, or type custom queries directly into the phone frame.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <button type="button" onclick="sendSimulatedPrompt('Hi')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-emerald-700 block mb-0.5">"Hi" / "Menu"</span>
+                        <span class="text-[11px] text-slate-500">Automated welcome greeting & interactive options</span>
+                    </button>
+
+                    <button type="button" onclick="sendSimulatedPrompt('Show Doctors')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-emerald-700 block mb-0.5">"Show Doctors"</span>
+                        <span class="text-[11px] text-slate-500">Specialist catalog, degrees & consultation fees</span>
+                    </button>
+
+                    <button type="button" onclick="sendSimulatedPrompt('Book appointment with Dr. Sarah')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-emerald-700 block mb-0.5">"Book Dr. Sarah"</span>
+                        <span class="text-[11px] text-slate-500">Instant appointment booking & DB slot reservation</span>
+                    </button>
+
+                    <button type="button" onclick="sendSimulatedPrompt('My Appointments')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-emerald-700 block mb-0.5">"My Appointments"</span>
+                        <span class="text-[11px] text-slate-500">View upcoming visits, doctor names & times</span>
+                    </button>
+
+                    <button type="button" onclick="sendSimulatedPrompt('Patient Details')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-emerald-700 block mb-0.5">"Patient Details"</span>
+                        <span class="text-[11px] text-slate-500">View full patient record, phone, blood group & alerts</span>
+                    </button>
+
+                    <button type="button" onclick="sendSimulatedPrompt('Clinic timings and address')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-emerald-700 block mb-0.5">"Timings & Address"</span>
+                        <span class="text-[11px] text-slate-500">Location, working hours & emergency desk</span>
+                    </button>
+
+                    <button type="button" onclick="sendSimulatedPrompt('Cancel my appointment')" class="text-left p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/70 hover:border-emerald-300 transition text-xs group shadow-xs">
+                        <span class="font-bold text-slate-800 group-hover:text-rose-700 block mb-0.5">"Cancel Appointment"</span>
+                        <span class="text-[11px] text-slate-500">Cancels patient's latest appointment automatically</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active FAQs Card -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                <h3 class="font-bold text-slate-900 text-sm">Automated Knowledge Base (FAQs)</h3>
+                <div class="space-y-2">
+                    {% for faq in faqs %}
+                    <div class="p-3 rounded-xl bg-slate-50 text-xs border border-slate-100">
+                        <p class="font-bold text-slate-800">Q: {{ faq.question }}</p>
+                        <p class="text-slate-600 mt-1 leading-relaxed">{{ faq.answer }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-xs text-slate-400">No FAQs configured yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Smartphone Device Frame (5 cols) -->
+        <div class="lg:col-span-5 flex justify-center">
+            <div class="w-full max-w-[380px] bg-slate-900 rounded-[44px] p-3.5 shadow-2xl border-4 border-slate-800">
+                <!-- Phone Screen -->
+                <div class="bg-[#efeae2] h-[600px] rounded-[34px] overflow-hidden flex flex-col relative shadow-inner">
+                    <!-- WhatsApp Top Header -->
+                    <div class="bg-[#075e54] text-white px-4 py-3 flex items-center justify-between shadow-md z-10">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm text-white border border-white/20">
+                                🏥
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-white leading-tight">{{ clinic.name|default:"Apex Health" }}</h4>
+                                <p class="text-[10px] text-emerald-200 flex items-center gap-1 font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Official AI Assistant
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 text-white/90">
+                            <i data-lucide="phone" class="w-4 h-4"></i>
+                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+
+                    <!-- Chat Message Feed -->
+                    <div id="simulatorFeed" class="flex-1 p-3.5 overflow-y-auto space-y-3 font-sans w-full bg-[radial-gradient(#d4cbbe_1px,transparent_1px)] [background-size:16px_16px]">
+                        <!-- Welcome message from Bot (Left-aligned) -->
+                        <div class="w-full flex justify-start">
+                            <div class="max-w-[85%] bg-white text-slate-800 rounded-2xl rounded-tl-none px-3.5 py-2.5 shadow-sm text-xs border border-slate-100">
+                                <p class="text-[11px] leading-relaxed">
+                                    Hello! 👋 Welcome to <strong>{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</strong>.<br><br>
+                                    I am your automated healthcare assistant.<br>
+                                    Type <strong>Hi</strong> or tap any query on the left to get started!
+                                </p>
+                                <span class="text-[9px] text-slate-400 block text-left mt-1">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Input Bar -->
+                    <div class="p-2.5 bg-[#f0f2f5] border-t border-slate-300 flex items-center gap-2 z-10">
+                        <input id="simInput" type="text" placeholder="Type a message (e.g. Hi, Book)..." class="flex-1 bg-white border border-slate-200 rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs" onkeydown="if(event.key==='Enter') executeSend()">
+                        <button type="button" onclick="executeSend()" class="w-9 h-9 rounded-full bg-[#00a884] hover:bg-[#008f6f] text-white flex items-center justify-center shadow-md transition active:scale-95">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function formatWhatsAppText(text) {
+        if (!text) return '';
+        // Escape HTML
+        let escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        // Bold: *text* -> <strong>text</strong>
+        escaped = escaped.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+        // Italic: _text_ -> <em>text</em>
+        escaped = escaped.replace(/_(.*?)_/g, '<em>$1</em>');
+        // Newlines -> <br>
+        escaped = escaped.replace(/\n/g, '<br>');
+        return escaped;
+    }
+
+    function appendMessage(sender, text) {
+        const feed = document.getElementById('simulatorFeed');
+        const isUser = (sender === 'USER' || sender === 'PATIENT');
+        const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        // Outer wrapper that guarantees 100% full width and pins right or left
+        const row = document.createElement('div');
+        row.className = isUser ? 'w-full flex justify-end mb-2' : 'w-full flex justify-start mb-2';
+
+        const bubble = document.createElement('div');
+        if (isUser) {
+            // WhatsApp Outgoing Bubble (Right Aligned, Light Green)
+            bubble.className = 'max-w-[85%] bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-none px-3.5 py-2.5 shadow-sm text-xs border border-emerald-100/60';
+            bubble.innerHTML = `
+                <div class="text-[11px] leading-relaxed break-words">${formatWhatsAppText(text)}</div>
+                <div class="flex items-center justify-end gap-1 mt-1 text-[9px] text-slate-500">
+                    <span>${now}</span>
+                    <span class="text-teal-600 font-bold">✓✓</span>
+                </div>
+            `;
+        } else {
+            // WhatsApp Incoming Bubble (Left Aligned, Clean White)
+            bubble.className = 'max-w-[85%] bg-white text-slate-900 rounded-2xl rounded-tl-none px-3.5 py-2.5 shadow-sm text-xs border border-slate-100';
+            bubble.innerHTML = `
+                <div class="text-[11px] leading-relaxed break-words">${formatWhatsAppText(text)}</div>
+                <div class="flex items-center justify-start gap-1 mt-1 text-[9px] text-slate-400">
+                    <span>${now}</span>
+                </div>
+            `;
+        }
+
+        row.appendChild(bubble);
+        feed.appendChild(row);
+        feed.scrollTop = feed.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const feed = document.getElementById('simulatorFeed');
+        const indicator = document.createElement('div');
+        indicator.id = 'typingIndicator';
+        indicator.className = 'w-full flex justify-start mb-2';
+        indicator.innerHTML = `
+            <div class="bg-white text-slate-500 rounded-2xl rounded-tl-none px-3.5 py-2 shadow-sm text-[11px] flex items-center gap-1.5 border border-slate-100">
+                <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            </div>
+        `;
+        feed.appendChild(indicator);
+        feed.scrollTop = feed.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+
+    let currentSimPhone = '+91 98111 22334';
+    let currentSimName = 'Rahul Verma';
+
+    function initSimPatient() {
+        const sel = document.getElementById('simPatientSelect');
+        if (sel && sel.options.length > 0) {
+            const opt = sel.options[sel.selectedIndex];
+            currentSimPhone = opt.value;
+            currentSimName = opt.dataset.name;
+            const disp = document.getElementById('activePatientDisplay');
+            if (disp) disp.innerText = `${currentSimName} (${currentSimPhone})`;
+        }
+    }
+
+    function switchSimulatedPatient(sel) {
+        const opt = sel.options[sel.selectedIndex];
+        currentSimPhone = opt.value;
+        currentSimName = opt.dataset.name;
+        document.getElementById('activePatientDisplay').innerText = `${currentSimName} (${currentSimPhone})`;
+        clearChatFeed();
+        appendMessage('BOT', `Switched active chat to *${currentSimName}* (${currentSimPhone}). Reply *My Appointments* to view your booked visit details.`);
+    }
+
+    document.addEventListener('DOMContentLoaded', initSimPatient);
+
+    async function sendSimulatedPrompt(text) {
+        if (!text) return;
+        // 1. Immediately append User message to the right
+        appendMessage('USER', text);
+        // 2. Show typing indicator
+        showTypingIndicator();
+
+        try {
+            const res = await fetch("{% url 'chatbot:simulate_api' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    phone: currentSimPhone,
+                    message: text,
+                    sender_name: currentSimName
+                })
+            });
+            const data = await res.json();
+            hideTypingIndicator();
+
+            if (data.status === 'success' && data.bot_reply) {
+                // 3. Immediately append Bot reply to the left
+                appendMessage('BOT', data.bot_reply);
+            } else {
+                appendMessage('BOT', 'Error: ' + (data.error || 'Failed to generate response'));
+            }
+        } catch (e) {
+            hideTypingIndicator();
+            appendMessage('BOT', 'Connection error communicating with the clinic chatbot engine.');
+        }
+    }
+
+    function executeSend() {
+        const input = document.getElementById('simInput');
+        const text = input.value.trim();
+        if (text) {
+            input.value = '';
+            sendSimulatedPrompt(text);
+        }
+    }
+
+    function clearChatFeed() {
+        const feed = document.getElementById('simulatorFeed');
+        feed.innerHTML = `
+            <div class="w-full flex justify-start">
+                <div class="max-w-[85%] bg-white text-slate-800 rounded-2xl rounded-tl-none px-3.5 py-2.5 shadow-sm text-xs border border-slate-100">
+                    <p class="text-[11px] leading-relaxed">
+                        Chat reset. Type <strong>Hi</strong> or tap any action on the left!
+                    </p>
+                    <span class="text-[9px] text-slate-400 block text-left mt-1">Just now</span>
+                </div>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

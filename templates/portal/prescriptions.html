@@ -1,0 +1,104 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}My Prescriptions | Patient Portal{% endblock %}
+{% block page_title %}My Prescriptions{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-black text-slate-800">Prescription Records</h2>
+            <p class="text-xs text-slate-500 mt-1">Review medications prescribed by your clinic doctors and download printable digital prescriptions.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200">
+                <i data-lucide="file-check" class="w-4 h-4"></i> {{ consultations.count }} Consultation(s) Recorded
+            </span>
+        </div>
+    </div>
+
+    <!-- Prescriptions List -->
+    {% if consultations %}
+    <div class="space-y-4">
+        {% for cons in consultations %}
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-lg border border-teal-100 shrink-0">
+                        <i data-lucide="pill" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-800">Dr. {{ cons.doctor.name }}</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800">{{ cons.doctor.department.name|default:"General Medicine" }}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-3">
+                            <span><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-slate-400"></i>{{ cons.created_at|date:"M d, Y" }} at {{ cons.created_at|time:"h:i A" }}</span>
+                            {% if cons.diagnosis %}
+                            <span class="text-slate-400">|</span>
+                            <span><strong>Diagnosis:</strong> {{ cons.diagnosis }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-end md:self-auto">
+                    <a href="{% url 'portal:prescription_detail' cons.id %}" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-sm shadow-teal-500/20 inline-flex items-center gap-1.5">
+                        <i data-lucide="eye" class="w-4 h-4"></i> View & Print Slip
+                    </a>
+                </div>
+            </div>
+
+            <!-- Medicines in this prescription -->
+            <div class="mt-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Prescribed Medicines ({{ cons.prescriptions.count }})</h4>
+                {% if cons.prescriptions.all %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {% for rx in cons.prescriptions.all %}
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+                            <i data-lucide="tablets" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-slate-800 truncate">{{ rx.medicine.name }}</p>
+                            <p class="text-[11px] text-slate-500">Dosage: <strong class="text-slate-700">{{ rx.dosage }}</strong></p>
+                            <p class="text-[11px] text-slate-500">Frequency: <span class="text-slate-700">{{ rx.frequency|default:"As directed" }}</span> · {{ rx.duration|default:"-" }}</p>
+                            {% if rx.instructions %}
+                            <p class="text-[10px] text-teal-600 font-medium italic mt-1 bg-white px-2 py-0.5 rounded border border-teal-100">"{{ rx.instructions }}"</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-400 italic">No medicinal drugs attached. Notes: {{ cons.treatment_plan|default:"Standard consultation regimen advised." }}</p>
+                {% endif %}
+            </div>
+
+            {% if cons.doctor_notes %}
+            <div class="mt-3 p-2.5 rounded-lg bg-amber-50/60 border border-amber-200/50 text-xs text-amber-900 flex items-start gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                <div>
+                    <span class="font-bold">Doctor's Advice:</span> {{ cons.doctor_notes }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl p-12 text-center border border-slate-200/80">
+        <div class="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="file-text" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">No Prescriptions Recorded</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">When your doctor conducts a consultation and issues prescriptions, they will be securely stored here.</p>
+        <a href="{% url 'portal:book_appointment' %}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-700 transition">
+            <i data-lucide="calendar-plus" class="w-4 h-4"></i> Book Doctor Consultation
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}My Login History | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
+                <i data-lucide="history" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight">My Login History</h1>
+                <p class="text-xs text-slate-500">Security history of all sessions recorded for your account (@{{ user.username }}).</p>
+            </div>
+        </div>
+        <a href="{% url 'accounts:profile' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+            &larr; Back to Profile
+        </a>
+    </div>
+
+    <!-- Sessions Table -->
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <h3 class="font-bold text-slate-900 text-sm">Recorded Authentication Sessions</h3>
+                <span class="text-xs text-slate-500">Manage and view your device login logs</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
+                    {{ my_logs|length }} Sessions Logged
+                </span>
+                {% if my_logs %}
+                <form method="POST" onsubmit="return confirm('Are you sure you want to delete and clear all your recorded login sessions?');" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="clear_all">
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition shadow-xs">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All History
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50/80 text-slate-500 uppercase text-[11px] font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3.5 px-6">Login Time</th>
+                        <th class="py-3.5 px-6">Last Activity</th>
+                        <th class="py-3.5 px-6">Logout Time</th>
+                        <th class="py-3.5 px-6">IP Address</th>
+                        <th class="py-3.5 px-6">Device / Browser</th>
+                        <th class="py-3.5 px-6">Status</th>
+                        <th class="py-3.5 px-6 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                    {% for log in my_logs %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3.5 px-6 font-mono text-xs font-bold text-slate-800 whitespace-nowrap">
+                            {{ log.login_time|date:"M d, Y - H:i:s" }}
+                        </td>
+                        <td class="py-3.5 px-6 font-mono text-xs text-slate-600">
+                            {% if log.last_activity %}
+                            {{ log.last_activity|time:"H:i:s" }}
+                            {% else %}
+                            <span class="text-slate-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-6 font-mono text-xs">
+                            {% if log.logout_time %}
+                            <span class="text-slate-700">{{ log.logout_time|time:"H:i:s" }}</span>
+                            {% elif log.status == 'ACTIVE' %}
+                            <span class="text-teal-600 font-semibold flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping"></span> Active Now
+                            </span>
+                            {% else %}
+                            <span class="text-slate-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-6 font-mono text-xs text-slate-600">
+                            {{ log.ip_address|default:"127.0.0.1" }}
+                        </td>
+                        <td class="py-3.5 px-6 text-xs text-slate-400 max-w-xs truncate" title="{{ log.user_agent }}">
+                            {{ log.user_agent|truncatechars:40|default:"Browser Session" }}
+                        </td>
+                        <td class="py-3.5 px-6">
+                            {% if log.status == 'ACTIVE' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Active
+                            </span>
+                            {% elif log.status == 'LOGGED_OUT' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                                Logged Out
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700">
+                                Failed
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-6 text-center">
+                            <form method="POST" onsubmit="return confirm('Delete this login record?');" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_one">
+                                <input type="hidden" name="log_id" value="{{ log.id }}">
+                                <button type="submit" title="Delete record" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="py-10 text-center text-slate-400 text-sm">
+                            No login history recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

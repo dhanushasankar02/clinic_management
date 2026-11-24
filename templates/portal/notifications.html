@@ -1,0 +1,81 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}Notifications | Patient Portal{% endblock %}
+{% block page_title %}Notifications Center{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-black text-slate-800">Alerts & System Notifications</h2>
+            <p class="text-xs text-slate-500 mt-1">Real-time alerts regarding your appointment bookings, approvals, and medical schedule updates.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200">
+                <i data-lucide="bell" class="w-4 h-4"></i> {{ notifications.count }} Total Alert(s)
+            </span>
+        </div>
+    </div>
+
+    <!-- Notification Feed -->
+    {% if notifications %}
+    <div class="space-y-3">
+        {% for n in notifications %}
+        <div class="bg-white rounded-2xl border p-5 transition flex items-start gap-4 {% if not n.is_read %}border-teal-300 bg-teal-50/20 shadow-sm{% else %}border-slate-200/80{% endif %}">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5
+                {% if n.notification_type == 'BOOKED' %}bg-blue-100 text-blue-700
+                {% elif n.notification_type == 'CONFIRMED' %}bg-emerald-100 text-emerald-700
+                {% elif n.notification_type == 'CANCELLED' or n.notification_type == 'REJECTED' %}bg-rose-100 text-rose-700
+                {% elif n.notification_type == 'RESCHEDULED' %}bg-amber-100 text-amber-700
+                {% else %}bg-teal-100 text-teal-700{% endif %}">
+                {% if n.notification_type == 'CONFIRMED' %}
+                <i data-lucide="check-check" class="w-5 h-5"></i>
+                {% elif n.notification_type == 'CANCELLED' or n.notification_type == 'REJECTED' %}
+                <i data-lucide="x-circle" class="w-5 h-5"></i>
+                {% elif n.notification_type == 'RESCHEDULED' %}
+                <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+                {% else %}
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                {% endif %}
+            </div>
+
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] font-black uppercase tracking-wider
+                        {% if n.notification_type == 'CONFIRMED' %}text-emerald-700
+                        {% elif n.notification_type == 'CANCELLED' or n.notification_type == 'REJECTED' %}text-rose-700
+                        {% elif n.notification_type == 'RESCHEDULED' %}text-amber-700
+                        {% else %}text-blue-700{% endif %}">
+                        {{ n.get_notification_type_display|default:n.notification_type }}
+                    </span>
+                    <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3 h-3"></i> {{ n.created_at|timesince }} ago
+                    </span>
+                </div>
+                <p class="text-xs font-semibold text-slate-800 mt-1 leading-relaxed">{{ n.message }}</p>
+
+                {% if n.appointment %}
+                <div class="mt-3 flex items-center gap-3">
+                    <a href="{% url 'portal:my_appointments' %}" class="inline-flex items-center gap-1 text-[11px] font-bold text-teal-600 hover:text-teal-700">
+                        View Appointment <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl p-12 text-center border border-slate-200/80">
+        <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="bell-off" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">No Notifications</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">You are all caught up! Booking updates, schedule confirmations, and reminder alerts will appear here.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

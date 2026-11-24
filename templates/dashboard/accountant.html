@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Accountant Dashboard | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Role Welcome Banner -->
+    <div class="bg-gradient-to-r from-cyan-950 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-cyan-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center font-bold text-xl shrink-0">
+                <i data-lucide="receipt" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Financial Accounts Desk</span>
+                <h1 class="text-2xl font-black text-white tracking-tight">Billing & Accounts Command</h1>
+                <p class="text-xs text-cyan-200/80 mt-1">Invoices &bull; Patient Receipts &bull; Payment Processing &bull; Receivables</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'billing:invoice_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition shadow-md">
+                <i data-lucide="plus" class="w-4 h-4"></i> Generate Invoice
+            </a>
+            <a href="{% url 'billing:service_catalogue' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition">
+                <i data-lucide="tag" class="w-4 h-4"></i> Tariff Master
+            </a>
+        </div>
+    </div>
+
+    <!-- Financial KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block">Today's Collections</span>
+            <div class="text-3xl font-black text-emerald-600 mt-1">₹{{ today_revenue|floatformat:2 }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Realized today</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600 block">Month-to-Date Revenue</span>
+            <div class="text-3xl font-black text-teal-900 mt-1">₹{{ month_revenue|floatformat:2 }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Current billing cycle</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-rose-100 bg-rose-50/20 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-600 block">Outstanding Receivables</span>
+            <div class="text-3xl font-black text-rose-700 mt-1">₹{{ total_outstanding|floatformat:2 }}</div>
+            <p class="text-xs text-rose-500 mt-0.5">Unpaid patient balances</p>
+        </div>
+    </div>
+
+    <!-- Unpaid Invoices List -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-rose-500"></i>
+                <h3 class="font-bold text-slate-900 text-base">Invoices Awaiting Payment</h3>
+            </div>
+            <a href="{% url 'billing:invoice_list' %}" class="text-xs font-bold text-cyan-700 hover:underline">All Invoices &rarr;</a>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for inv in unpaid_invoices %}
+            <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                <div>
+                    <span class="font-mono text-xs font-bold text-cyan-700">#{{ inv.invoice_number }}</span>
+                    <h4 class="font-bold text-slate-900 text-sm mt-0.5">{{ inv.patient.full_name }}</h4>
+                    <p class="text-xs text-slate-400">Total: ₹{{ inv.total_amount }} &bull; Due: {{ inv.due_date }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="font-bold text-sm text-rose-600">₹{{ inv.balance_due }} Due</span>
+                    <a href="{% url 'billing:invoice_detail' inv.id %}" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition">
+                        Receipt Payment
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-400 text-xs">No outstanding invoices pending collection.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

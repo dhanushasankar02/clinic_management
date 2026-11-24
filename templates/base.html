@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Apex Smart Clinic Management OS{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-200 flex flex-col fixed inset-y-0 z-30 shadow-xl">
+        <!-- Brand -->
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-800 bg-slate-950 shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+                <i data-lucide="cross" class="w-5 h-5"></i>
+            </div>
+            <div class="truncate">
+                <h1 class="font-bold text-white tracking-wide text-sm leading-tight truncate">{{ clinic.name|default:"Apex Health OS" }}</h1>
+                <p class="text-[10px] text-teal-400 font-semibold tracking-wider uppercase">Clinical OS &bull; RBAC</p>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {% if is_admin %}
+            <!-- ================= ADMIN DASHBOARD MENU (EXACT SECTION 6 ORDER) ================= -->
+            <p class="px-3 text-[10px] font-bold text-teal-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i> Admin Control Center
+            </p>
+
+            <!-- 1. Dashboard Overview -->
+            <a href="{% url 'dashboard:index' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name == 'index' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                1. Dashboard Overview
+            </a>
+
+            <!-- 2. User Management -->
+            <a href="{% url 'accounts:users_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'users_list' and not request.GET.filter %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="users-2" class="w-4 h-4"></i>
+                2. User Management
+            </a>
+
+            <!-- 3. Login Activity -->
+            <a href="{% url 'accounts:login_activity' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'login_activity' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+                3. Login Activity
+            </a>
+
+            <!-- 4. Clinic Management -->
+            <a href="{% url 'clinics:detail' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'clinics' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="building" class="w-4 h-4"></i>
+                4. Clinic Management
+            </a>
+
+            <!-- 5. Patient Management -->
+            <a href="{% url 'patients:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'patients' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                5. Patient Management
+            </a>
+
+            <!-- 6. Doctor Management -->
+            <a href="{% url 'doctors:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'doctors' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="stethoscope" class="w-4 h-4"></i>
+                6. Doctor Management
+            </a>
+
+            <!-- 7. Staff Management -->
+            <a href="{% url 'accounts:users_list' %}?filter=staff" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.GET.filter == 'staff' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="contact" class="w-4 h-4"></i>
+                7. Staff Management
+            </a>
+
+            <!-- 8. Appointment Management -->
+            <a href="{% url 'appointments:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'appointments' and request.resolver_match.url_name != 'queue_board' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                8. Appointment Management
+            </a>
+
+            <!-- 9. Queue Management -->
+            <a href="{% url 'appointments:queue_board' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'queue_board' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="list-ordered" class="w-4 h-4"></i>
+                9. Queue Management
+            </a>
+
+            <!-- 10. Consultation & EMR -->
+            <a href="{% url 'consultations:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'consultations' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="file-heart" class="w-4 h-4"></i>
+                10. Consultation & EMR
+            </a>
+
+            <!-- 11. Laboratory Management -->
+            <a href="{% url 'laboratory:order_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'laboratory' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="test-tube-2" class="w-4 h-4"></i>
+                11. Laboratory Management
+            </a>
+
+            <!-- 12. Pharmacy Management -->
+            <a href="{% url 'pharmacy:dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'pharmacy' and request.resolver_match.url_name == 'dashboard' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="pill" class="w-4 h-4"></i>
+                12. Pharmacy Management
+            </a>
+
+            <!-- 13. Billing & Payments -->
+            <a href="{% url 'billing:invoice_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'billing' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+                13. Billing & Payments
+            </a>
+
+            <!-- 14. Inventory Management -->
+            <a href="{% url 'pharmacy:medicine_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'medicine_list' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="boxes" class="w-4 h-4"></i>
+                14. Inventory Management
+            </a>
+
+            <!-- 15. Reports & Analytics -->
+            <a href="{% url 'reports:dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'reports' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                15. Reports & Analytics
+            </a>
+
+            <!-- 16. Notifications -->
+            <a href="{% url 'communication:notifications' %}" class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'notifications' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <span class="flex items-center gap-3">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    16. Notifications
+                </span>
+                {% if unread_notifications_count %}
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+
+            <!-- 17. System Settings -->
+            <a href="{% url 'clinics:detail' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                17. System Settings
+            </a>
+
+            <!-- 18. My Profile -->
+            <a href="{% url 'accounts:profile' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'profile' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                18. My Profile
+            </a>
+
+            <!-- 19. Logout -->
+            <a href="{% url 'accounts:logout' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition text-rose-400 hover:bg-rose-500/20 hover:text-rose-300">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                19. Logout
+            </a>
+
+            {% else %}
+            <!-- ================= USER (STAFF) DASHBOARD MENU (EXACT SECTION 7 ORDER) ================= -->
+            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <i data-lucide="user-check" class="w-3.5 h-3.5 text-teal-400"></i> {{ current_user_role_display }} Workspace
+            </p>
+
+            <!-- 1. Dashboard -->
+            <a href="{% url 'dashboard:index' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'dashboard' and request.resolver_match.url_name != 'tasks' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                Dashboard
+            </a>
+
+            <!-- 2. My Profile -->
+            <a href="{% url 'accounts:profile' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'profile' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="user" class="w-4 h-4"></i>
+                My Profile
+            </a>
+
+            <!-- 3. My Assigned Tasks -->
+            <a href="{% url 'dashboard:tasks' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'tasks' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                My Assigned Tasks
+            </a>
+
+            <!-- 4. Appointments (if permitted) -->
+            {% if can_view_appointments %}
+            <a href="{% url 'appointments:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'appointments' and request.resolver_match.url_name != 'queue_board' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                Appointments
+            </a>
+            {% endif %}
+
+            <!-- 5. Patient Records (if permitted) -->
+            {% if can_view_patients %}
+            <a href="{% url 'patients:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'patients' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                Patient Records
+            </a>
+            {% endif %}
+
+            <!-- Permitted Clinical Modules based on Role -->
+            {% if can_view_queue %}
+            <a href="{% url 'appointments:queue_board' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'queue_board' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="list-ordered" class="w-4 h-4"></i>
+                Queue Management
+            </a>
+            {% endif %}
+
+            {% if can_view_consultations %}
+            <a href="{% url 'consultations:list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'consultations' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="file-heart" class="w-4 h-4"></i>
+                Consultation & EMR
+            </a>
+            {% endif %}
+
+            {% if can_view_laboratory %}
+            <a href="{% url 'laboratory:order_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'laboratory' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="test-tube-2" class="w-4 h-4"></i>
+                Laboratory
+            </a>
+            {% endif %}
+
+            {% if can_view_pharmacy %}
+            <a href="{% url 'pharmacy:dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'pharmacy' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="pill" class="w-4 h-4"></i>
+                Pharmacy
+            </a>
+            {% endif %}
+
+            {% if can_view_billing %}
+            <a href="{% url 'billing:invoice_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'billing' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+                Billing & Payments
+            </a>
+            {% endif %}
+
+            {% if can_view_inventory %}
+            <a href="{% url 'pharmacy:medicine_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'medicine_list' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="boxes" class="w-4 h-4"></i>
+                Inventory
+            </a>
+            {% endif %}
+
+            {% if can_view_reports %}
+            <a href="{% url 'reports:dashboard' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.app_name == 'reports' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                Financial Reports
+            </a>
+            {% endif %}
+
+            <!-- 6. Notifications -->
+            <a href="{% url 'communication:notifications' %}" class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'notifications' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <span class="flex items-center gap-3">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    Notifications
+                </span>
+                {% if unread_notifications_count %}
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+
+            <!-- 8. Change Password -->
+            <a href="{% url 'accounts:password_change' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-800 hover:text-white {% if request.resolver_match.url_name == 'password_change' %}bg-teal-600 text-white shadow-sm shadow-teal-500/30{% endif %}">
+                <i data-lucide="key-round" class="w-4 h-4"></i>
+                Change Password
+            </a>
+
+            <!-- 9. Logout -->
+            <a href="{% url 'accounts:logout' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition text-rose-400 hover:bg-rose-500/20 hover:text-rose-300">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                Logout
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- Current User Profile Box in Sidebar Footer -->
+        <div class="p-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between shrink-0">
+            {% if request.user.is_authenticated %}
+            <div class="flex items-center gap-2.5 truncate">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-400 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
+                    {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                </div>
+                <div class="truncate">
+                    <p class="text-xs font-bold text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-[10px] text-teal-400 font-semibold">{{ current_user_role_display }}</p>
+                </div>
+            </div>
+            <a href="{% url 'accounts:logout' %}" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Sign Out">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+            </a>
+            {% else %}
+            <div class="w-full">
+                <a href="{% url 'accounts:login' %}" class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition">
+                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Sign In
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="pl-64 flex-1 flex flex-col min-w-0">
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-20 flex items-center justify-between px-8">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Clinic:</span>
+                <span class="text-sm font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</span>
+                {% if is_admin %}
+                <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span> Admin Full Access
+                </span>
+                {% else %}
+                <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                    {{ current_user_role_display }} Mode
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="{% url 'chatbot:test' %}" class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    AI WhatsApp Bot
+                </a>
+
+                <!-- Notification Bell -->
+                <a href="{% url 'communication:notifications' %}" class="relative p-2 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-xl transition" title="My Notifications">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    {% if unread_notifications_count %}
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+                    {% endif %}
+                </a>
+
+                <div class="h-4 w-px bg-slate-200"></div>
+
+                {% if request.user.is_authenticated %}
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2.5 hover:opacity-80 transition">
+                        <div class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                            {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <p class="text-xs font-bold text-slate-800 leading-tight">{{ request.user.get_full_name|default:request.user.username }}</p>
+                            <p class="text-[10px] font-semibold text-teal-600">{{ current_user_role_display }}</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="ml-2 text-xs font-semibold text-rose-600 hover:text-rose-700 border border-rose-200 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                        <i data-lucide="log-out" class="w-3 h-3"></i> Logout
+                    </a>
+                </div>
+                {% else %}
+                <a href="{% url 'accounts:login' %}" class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Sign In
+                </a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Message Alerts -->
+        {% if messages %}
+        <div class="px-8 pt-4 space-y-2">
+            {% for message in messages %}
+            <div class="p-4 rounded-xl text-sm font-semibold flex items-center justify-between {% if message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif message.tags == 'error' %}bg-rose-50 text-rose-800 border border-rose-200{% elif message.tags == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}alert-octagon{% elif message.tags == 'warning' %}alert-triangle{% else %}info{% endif %}" class="w-4 h-4 shrink-0"></i>
+                    <span>{{ message }}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Body Content -->
+        <main class="flex-1 p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

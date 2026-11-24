@@ -1,0 +1,119 @@
+{% extends 'portal/base_portal.html' %}
+
+{% block title %}My Laboratory Reports | Patient Portal{% endblock %}
+{% block page_title %}Laboratory Reports{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-black text-slate-800">Diagnostic & Lab Reports</h2>
+            <p class="text-xs text-slate-500 mt-1">Access verified blood work, biochemical panels, and diagnostic test investigations conducted for you.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+                <i data-lucide="test-tube-2" class="w-4 h-4"></i> {{ lab_orders.count }} Test Order(s)
+            </span>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    {% if lab_orders %}
+    <div class="space-y-4">
+        {% for order in lab_orders %}
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg border border-purple-100 shrink-0">
+                        <i data-lucide="flask-conical" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-800">{{ order.order_number }}</h3>
+                            {% if order.status == 'COMPLETED' %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                <i data-lucide="check-circle" class="w-3 h-3"></i> Completed & Verified
+                            </span>
+                            {% elif order.status == 'IN_PROCESS' %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+                                Testing in Process
+                            </span>
+                            {% elif order.status == 'SAMPLE_COLLECTED' %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                                Sample Collected
+                            </span>
+                            {% else %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                                {{ order.get_status_display }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-3">
+                            <span><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-slate-400"></i>Ordered on {{ order.created_at|date:"M d, Y" }} at {{ order.created_at|time:"h:i A" }}</span>
+                            {% if order.doctor %}
+                            <span class="text-slate-400">|</span>
+                            <span>Ref: Dr. {{ order.doctor.name }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-end md:self-auto">
+                    <a href="{% url 'portal:lab_report_detail' order.id %}" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-sm shadow-purple-500/20 inline-flex items-center gap-1.5">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> View Report & Results
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tests Included in this Order -->
+            <div class="mt-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Investigations Included ({{ order.items.count }})</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {% for item in order.items.all %}
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start justify-between gap-2">
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">{{ item.test.name }}</p>
+                            <p class="text-[10px] text-slate-400">{{ item.test.category }} · {{ item.test.code }}</p>
+                            <p class="text-[11px] text-slate-600 mt-1 font-mono">
+                                Result: <strong class="text-slate-900">{{ item.result_value|default:"Pending analysis" }}</strong> {{ item.test.unit }}
+                            </p>
+                        </div>
+                        <div>
+                            {% if item.flag == 'NORMAL' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Normal</span>
+                            {% elif item.flag == 'HIGH' or item.flag == 'CRITICAL' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Alert</span>
+                            {% elif item.flag == 'LOW' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Low</span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-xs text-slate-400 italic">No individual test items recorded.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if order.clinical_notes %}
+            <div class="mt-3 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                <strong class="text-slate-700">Clinical Indication:</strong> {{ order.clinical_notes }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl p-12 text-center border border-slate-200/80">
+        <div class="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="test-tube-2" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">No Laboratory Reports Found</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">When your doctor orders pathology, hematology, or biochemistry tests, results will be available here once verified.</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

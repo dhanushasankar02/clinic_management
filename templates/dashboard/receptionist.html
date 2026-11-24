@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Receptionist Dashboard | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Role Welcome Banner -->
+    <div class="bg-gradient-to-r from-amber-900 to-orange-950 text-white p-6 rounded-3xl shadow-lg border border-amber-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-xl shrink-0">
+                <i data-lucide="user-check" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Front Desk & Triage</span>
+                <h1 class="text-2xl font-black text-white tracking-tight">Receptionist & Live Queue Command</h1>
+                <p class="text-xs text-amber-200/80 mt-1">Patient Check-in &bull; Appointment Scheduling &bull; Token Issuance</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'patients:list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md">
+                <i data-lucide="user-plus" class="w-4 h-4"></i> Register Patient
+            </a>
+            <a href="{% url 'appointments:queue_board' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition">
+                <i data-lucide="list-ordered" class="w-4 h-4"></i> Full Queue Board
+            </a>
+        </div>
+    </div>
+
+    <!-- Reception KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-600 block">Waiting in Lobby</span>
+            <div class="text-3xl font-black text-amber-600 mt-1">{{ waiting_queue|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Tokens waiting for doctor</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600 block">Total Booked Today</span>
+            <div class="text-3xl font-black text-slate-900 mt-1">{{ total_booked }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Scheduled appointments</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block">Checked In</span>
+            <div class="text-3xl font-black text-emerald-600 mt-1">{{ checked_in_count }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Arrived at clinic</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 block">Completed</span>
+            <div class="text-3xl font-black text-indigo-600 mt-1">{{ completed_count }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Finished consultations</p>
+        </div>
+    </div>
+
+    <!-- Live Queue Stream -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="list-ordered" class="w-5 h-5 text-amber-600"></i>
+                <h3 class="font-bold text-slate-900 text-base">Live Reception Token Desk</h3>
+            </div>
+            <a href="{% url 'appointments:queue_board' %}" class="text-xs font-bold text-amber-600 hover:underline">Open Queue Display &rarr;</a>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for appt in today_appointments %}
+            <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-white font-black text-sm flex items-center justify-center shrink-0">
+                        {{ appt.token_number }}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">{{ appt.patient.full_name }}</h4>
+                        <p class="text-xs text-slate-400">MRN: {{ appt.patient.mrn_number }} &bull; Doctor: {{ appt.doctor.full_name }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold
+                        {% if appt.status == 'WAITING' %}bg-amber-50 text-amber-700
+                        {% elif appt.status == 'CHECKED_IN' %}bg-teal-50 text-teal-700
+                        {% elif appt.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700
+                        {% else %}bg-slate-100 text-slate-700{% endif %}">
+                        {{ appt.get_status_display }}
+                    </span>
+                    <a href="{% url 'appointments:print_visit_slip' appt.id %}" target="_blank" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1">
+                        <i data-lucide="printer" class="w-3 h-3"></i> Visit Slip
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-400 text-xs">No appointments scheduled for today yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

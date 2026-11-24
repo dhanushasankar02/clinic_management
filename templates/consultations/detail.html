@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Consultation #{{ consultation.id }} - {{ consultation.patient.full_name }} | Smart Clinic{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Clinical Encounter Record
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ consultation.patient.full_name }}</h1>
+            <p class="text-sm text-slate-500">Consulted by Dr. {{ consultation.doctor.name }} on {{ consultation.consultation_date|date:"F d, Y - h:i A" }}</p>
+        </div>
+        <div class="flex gap-3">
+            {% if lab_orders %}
+            <a href="{% url 'laboratory:detail' lab_orders.first.pk %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold transition shadow-sm">
+                <i data-lucide="test-tube" class="w-4 h-4"></i> Laboratory Order #{{ lab_orders.first.order_number }}
+            </a>
+            {% endif %}
+            <a href="{% url 'pharmacy:dispense_create' %}?patient_id={{ consultation.patient.pk }}&consultation_id={{ consultation.pk }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition shadow-sm">
+                <i data-lucide="pill" class="w-4 h-4"></i> Go to Pharmacy Dispensing &rarr;
+            </a>
+            <a href="{% url 'consultations:print_rx' consultation.pk %}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium transition">
+                <i data-lucide="printer" class="w-4 h-4"></i> Print Rx
+            </a>
+            <a href="{% url 'patients:detail' consultation.patient.pk %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium transition">
+                <i data-lucide="user" class="w-4 h-4 text-slate-500"></i> Patient EMR
+            </a>
+        </div>
+    </div>
+
+    <!-- Clinical Workflow Order Stepper -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="git-commit" class="w-4 h-4 text-teal-600"></i> Clinic Patient Flow Order:
+            </span>
+            <div class="flex items-center gap-2 text-xs flex-wrap font-semibold">
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 1. Register Patient
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 2. Reception & Token
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                <span class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 3. Doctor Checkup
+                </span>
+                <span class="text-slate-400">&rarr;</span>
+                {% if lab_orders %}
+                <a href="{% url 'laboratory:detail' lab_orders.first.pk %}" class="px-3 py-1 rounded-lg bg-teal-600 text-white shadow-sm flex items-center gap-1 hover:bg-teal-700 transition">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> 4. Lab Investigation (Ordered) &rarr;
+                </a>
+                <span class="text-slate-400">&rarr;</span>
+                <a href="{% url 'pharmacy:dispense_create' %}?patient_id={{ consultation.patient.pk }}&consultation_id={{ consultation.pk }}" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                    5. Pharmacy Dispensing
+                </a>
+                {% else %}
+                <a href="{% url 'pharmacy:dispense_create' %}?patient_id={{ consultation.patient.pk }}&consultation_id={{ consultation.pk }}" class="px-3 py-1 rounded-lg bg-emerald-600 text-white shadow-sm flex items-center gap-1 hover:bg-emerald-700 transition">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> 4. Pharmacy Dispensing (Active - No Lab Needed) &rarr;
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient & Vitals Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Patient Mini Bio -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm md:col-span-1 space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Patient Demographics</h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">MRN ID:</span>
+                    <span class="font-bold text-slate-800">{{ consultation.patient.patient_id|default:consultation.patient.id }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Phone:</span>
+                    <span class="font-semibold text-slate-800">{{ consultation.patient.phone }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Age / Gender:</span>
+                    <span class="font-semibold text-slate-800">{{ consultation.patient.age }} yrs / {{ consultation.patient.get_gender_display }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Blood Group:</span>
+                    <span class="font-bold text-rose-600">{{ consultation.patient.blood_group }}</span>
+                </div>
+                {% if consultation.patient.allergies %}
+                <div class="pt-2">
+                    <span class="text-xs font-bold text-rose-500 uppercase">Allergies:</span>
+                    <p class="text-xs text-rose-700 bg-rose-50 p-2 rounded-lg mt-1">{{ consultation.patient.allergies }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recorded Vitals Grid -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm md:col-span-2 space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Recorded Vital Signs</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">Blood Pressure</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.blood_pressure|default:"--" }}</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">Pulse Rate</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.pulse|default:"--" }} <span class="text-xs font-normal text-slate-500">bpm</span></p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">Temperature</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.temperature|default:"--" }} <span class="text-xs font-normal text-slate-500">°F</span></p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">SpO2</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.spo2|default:"--" }} <span class="text-xs font-normal text-slate-500">%</span></p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">Resp. Rate</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.respiratory_rate|default:"--" }}</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">Height</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.height_cm|default:"--" }} <span class="text-xs font-normal text-slate-500">cm</span></p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">Weight</span>
+                    <p class="text-lg font-black text-slate-800 mt-0.5">{{ consultation.weight_kg|default:"--" }} <span class="text-xs font-normal text-slate-500">kg</span></p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                    <span class="text-[11px] text-slate-400 font-medium">BMI</span>
+                    <p class="text-lg font-black text-teal-600 mt-0.5">{{ consultation.bmi|default:"--" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clinical Findings & Diagnosis -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+            <i data-lucide="clipboard" class="w-4 h-4 text-teal-600"></i> Clinical Findings
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+            <div>
+                <span class="font-bold text-xs uppercase text-slate-400">Chief Complaints</span>
+                <p class="mt-1 text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100">{{ consultation.chief_complaints }}</p>
+            </div>
+            <div>
+                <span class="font-bold text-xs uppercase text-slate-400">Physical Examination</span>
+                <p class="mt-1 text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100">{{ consultation.examination_notes|default:"No specific examination findings recorded." }}</p>
+            </div>
+            <div class="md:col-span-2">
+                <span class="font-bold text-xs uppercase text-teal-600">Diagnosis</span>
+                <p class="mt-1 text-base font-bold text-slate-900 bg-teal-50/50 p-3.5 rounded-xl border border-teal-200/60">{{ consultation.diagnosis }}</p>
+            </div>
+            {% if consultation.treatment_plan %}
+            <div class="md:col-span-2">
+                <span class="font-bold text-xs uppercase text-slate-400">Treatment Plan & Advice</span>
+                <p class="mt-1 text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100">{{ consultation.treatment_plan }}</p>
+            </div>
+            {% endif %}
+            {% if consultation.follow_up_date %}
+            <div>
+                <span class="font-bold text-xs uppercase text-slate-400">Next Follow-up Date</span>
+                <p class="mt-1 font-bold text-teal-700">{{ consultation.follow_up_date|date:"l, F d, Y" }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Prescription Chart -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                <span class="text-xl font-serif text-teal-700 italic font-black">℞</span> Prescribed Medications
+            </h3>
+            <a href="{% url 'pharmacy:dispense_create' %}?patient_id={{ consultation.patient.pk }}" class="text-xs font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1">
+                <i data-lucide="pill" class="w-3.5 h-3.5"></i> Dispense in Pharmacy &rarr;
+            </a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="py-2.5 px-4">#</th>
+                        <th class="py-2.5 px-4">Medicine Name</th>
+                        <th class="py-2.5 px-4">Dosage</th>
+                        <th class="py-2.5 px-4">Route</th>
+                        <th class="py-2.5 px-4">Frequency</th>
+                        <th class="py-2.5 px-4">Duration</th>
+                        <th class="py-2.5 px-4">Instructions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for p in consultation.prescriptions.all %}
+                    <tr>
+                        <td class="py-3 px-4 font-bold text-slate-400">{{ forloop.counter }}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">{{ p.medicine_name }}</td>
+                        <td class="py-3 px-4">{{ p.dosage }}</td>
+                        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs">{{ p.route }}</span></td>
+                        <td class="py-3 px-4 font-semibold text-teal-700">{{ p.frequency }}</td>
+                        <td class="py-3 px-4">{{ p.duration_days }} days</td>
+                        <td class="py-3 px-4 text-slate-500 text-xs">{{ p.instructions }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="py-4 text-center text-slate-400 text-xs">No medications prescribed.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Linked Lab Orders -->
+    {% if lab_orders %}
+    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i data-lucide="test-tube-2" class="w-4 h-4 text-teal-600"></i> Linked Diagnostic Lab Orders
+        </h3>
+        {% for o in lab_orders %}
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div>
+                <span class="font-bold text-slate-900 text-sm">Order #{{ o.order_number }}</span>
+                <span class="ml-2 text-xs px-2 py-0.5 rounded font-semibold bg-teal-100 text-teal-800">{{ o.get_status_display }}</span>
+                <div class="text-xs text-slate-500 mt-1">Tests: {% for it in o.items.all %}{{ it.test.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+            </div>
+            <a href="{% url 'laboratory:detail' o.pk %}" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-teal-700 hover:bg-slate-100">
+                View Lab Status &rarr;
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

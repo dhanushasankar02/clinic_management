@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Operational & Financial Reports | Smart Clinic{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2 text-teal-600 text-xs font-semibold uppercase tracking-wider mb-1">
+                <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Executive Intelligence
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+                {% if can_view_finance %}Clinical & Financial Reports{% else %}Clinical & Operational Analytics{% endif %}
+            </h1>
+            <p class="text-sm text-slate-500">
+                {% if can_view_finance %}
+                Comprehensive real-time reporting across collections, invoices, consultations, lab testing, and pharmacy inventory.
+                {% else %}
+                Departmental operational analysis across patient visits, consultations, lab diagnostics, and pharmacy dispensary.
+                {% endif %}
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            {% if not can_view_finance %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i> Financial Ledgers Restricted (Admin Only)
+            </span>
+            {% endif %}
+            <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium transition shadow-sm">
+                <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i> Print Report Summary
+            </button>
+        </div>
+    </div>
+
+    {% if can_view_finance %}
+    <!-- Revenue Snapshot Grid (Admin Only) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Today's Collections</span>
+            <div class="text-3xl font-black text-emerald-600 mt-2">₹{{ today_collections }}</div>
+            <p class="text-xs text-slate-500 mt-1">Cash & digital collections</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600">Month-to-Date Revenue</span>
+            <div class="text-3xl font-black text-teal-700 mt-2">₹{{ month_collections }}</div>
+            <p class="text-xs text-slate-500 mt-1">Total revenue collected this month</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Lifetime Revenue</span>
+            <div class="text-3xl font-black text-slate-900 mt-2">₹{{ total_revenue }}</div>
+            <p class="text-xs text-slate-500 mt-1">Cumulative receipts</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-500">Pending Receivables</span>
+            <div class="text-3xl font-black text-rose-600 mt-2">₹{{ total_outstanding }}</div>
+            <p class="text-xs text-slate-500 mt-1">Unpaid invoice balances</p>
+        </div>
+    </div>
+    {% else %}
+    <!-- Restricted Financial Notice Banner for Regular Staff -->
+    <div class="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-5 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <div class="space-y-1">
+            <h4 class="text-sm font-bold text-amber-900">Operational Mode (Restricted Access)</h4>
+            <p class="text-xs text-amber-800 leading-relaxed">
+                As a standard staff member, you have access to clinical workflow statistics, patient volumes, and department activity.
+                Clinic financial ledgers, revenue numbers, and fee audit tables are accessible exclusively to <strong>Clinic Administrators</strong>.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Clinical Productivity & Payment Modes Breakdown -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% if can_view_finance %}
+        <!-- Payment Mode Breakdown (Admin Only) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-teal-600"></i> Payment Collection Channels
+            </h3>
+            <div class="space-y-3">
+                {% for pm in payment_methods %}
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-xs">
+                            {{ pm.payment_method|slice:":2" }}
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 text-sm">{{ pm.payment_method }}</span>
+                            <span class="text-xs text-slate-400 block">{{ pm.count }} receipt(s)</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-black text-slate-900 text-base">₹{{ pm.total }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-xs text-slate-400 py-4 text-center">No payment transactions recorded.</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Operational Summary for Staff -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i data-lucide="calendar" class="w-4 h-4 text-teal-600"></i> Appointment & Visit Summary
+            </h3>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Total Bookings</span>
+                    <p class="text-2xl font-black text-slate-900 mt-1">{{ total_appointments }}</p>
+                    <span class="text-[10px] text-slate-500">Scheduled in clinic</span>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Today's Scheduled</span>
+                    <p class="text-2xl font-black text-teal-700 mt-1">{{ today_appointments }}</p>
+                    <span class="text-[10px] text-teal-600 font-semibold">{{ completed_appointments }} completed</span>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Consultations</span>
+                    <p class="text-2xl font-black text-emerald-600 mt-1">{{ total_consultations }}</p>
+                    <span class="text-[10px] text-emerald-600 font-semibold">Clinical notes filed</span>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Low Stock Medicines</span>
+                    <p class="text-2xl font-black text-rose-600 mt-1">{{ low_stock_count }}</p>
+                    <span class="text-[10px] text-rose-500 font-semibold">Reorder required</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Clinical Productivity Matrix -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i data-lucide="activity" class="w-4 h-4 text-teal-600"></i> Departmental Workload Summary
+            </h3>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Registered Patients</span>
+                    <p class="text-xl font-black text-slate-900 mt-1">{{ total_patients }}</p>
+                    <span class="text-[10px] text-teal-600 font-semibold">+{{ new_patients_month }} this month</span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Completed Visits</span>
+                    <p class="text-xl font-black text-emerald-600 mt-1">{{ completed_appointments }}</p>
+                    <span class="text-[10px] text-slate-500">Out of {{ total_appointments }} total</span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Laboratory Orders</span>
+                    <p class="text-xl font-black text-slate-900 mt-1">{{ total_lab_orders }}</p>
+                    <span class="text-[10px] text-emerald-600 font-semibold">{{ completed_lab_orders }} verified ({{ pending_lab_orders }} pending)</span>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-slate-400 font-medium">Pharmacy Dispensations</span>
+                    <p class="text-xl font-black text-slate-900 mt-1">{{ total_dispensations }}</p>
+                    {% if can_view_finance %}
+                    <span class="text-[10px] text-teal-600 font-semibold">₹{{ pharmacy_revenue }} sales</span>
+                    {% else %}
+                    <span class="text-[10px] text-slate-500 font-semibold">{{ total_medicines }} medicines in formulary</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Consultation Performance Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i data-lucide="stethoscope" class="w-4 h-4 text-teal-600"></i> Doctor Consultation Volume
+            </h3>
+            <span class="text-xs text-slate-400">Operational performance indicators</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-semibold border-b border-slate-100">
+                    <tr>
+                        <th class="py-3 px-6">Doctor Name</th>
+                        <th class="py-3 px-6">Specialty / Department</th>
+                        {% if can_view_finance %}
+                        <th class="py-3 px-6">Consultation Fee</th>
+                        {% endif %}
+                        <th class="py-3 px-6">Appointments</th>
+                        <th class="py-3 px-6">Consultations Logged</th>
+                        <th class="py-3 px-6 text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for doc in doctor_stats %}
+                    <tr class="hover:bg-slate-50/60">
+                        <td class="py-3.5 px-6 font-bold text-slate-900">Dr. {{ doc.name }}</td>
+                        <td class="py-3.5 px-6"><span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">{{ doc.specialty.name|default:"General Medicine" }}</span></td>
+                        {% if can_view_finance %}
+                        <td class="py-3.5 px-6 font-semibold text-slate-800">₹{{ doc.consultation_fee }}</td>
+                        {% endif %}
+                        <td class="py-3.5 px-6 font-bold text-slate-700">{{ doc.appointment_count }}</td>
+                        <td class="py-3.5 px-6 font-black text-teal-700">{{ doc.consultation_count }}</td>
+                        <td class="py-3.5 px-6 text-right">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">Active</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-6 text-center text-slate-400">No doctors on duty.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

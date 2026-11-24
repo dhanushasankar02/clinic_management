@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}My Assigned Tasks | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
+                <i data-lucide="check-square" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight">My Assigned Clinical Tasks</h1>
+                <p class="text-xs text-slate-500">Filtered clinical duties and pending actions for your role as <strong>{{ role_display }}</strong>.</p>
+            </div>
+        </div>
+        <span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 border border-teal-200">
+            {{ tasks|length }} Pending Items
+        </span>
+    </div>
+
+    <!-- Tasks List -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for task in tasks %}
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-500/50 transition flex items-start justify-between gap-4">
+            <div class="space-y-1.5">
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                    {{ task.badge }}
+                </span>
+                <h4 class="font-bold text-slate-900 text-sm leading-snug">{{ task.title }}</h4>
+                <p class="text-xs text-slate-500 leading-relaxed">{{ task.desc }}</p>
+            </div>
+            <a href="{{ task.link }}" class="shrink-0 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1">
+                Open &rarr;
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-span-2 bg-white p-12 rounded-2xl border border-slate-200/80 text-center">
+            <i data-lucide="check-circle-2" class="w-10 h-10 text-emerald-500 mx-auto mb-2"></i>
+            <h3 class="font-bold text-slate-800 text-base">All caught up!</h3>
+            <p class="text-xs text-slate-400 mt-1">No pending tasks assigned to your role right now.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

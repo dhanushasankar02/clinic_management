@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Dashboard | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Role Welcome Banner -->
+    <div class="bg-gradient-to-r from-blue-950 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-blue-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center font-bold text-xl shrink-0">
+                <i data-lucide="boxes" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Logistics & Supply Desk</span>
+                <h1 class="text-2xl font-black text-white tracking-tight">Medicine Stock & Inventory Command</h1>
+                <p class="text-xs text-blue-200/80 mt-1">Batch Tracking &bull; Expiry Monitoring &bull; Re-order Procurement</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'pharmacy:medicine_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 font-black text-xs transition shadow-md">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add Medicine
+            </a>
+            <a href="{% url 'pharmacy:dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition">
+                <i data-lucide="activity" class="w-4 h-4"></i> Stock Analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Inventory KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-rose-200 bg-rose-50/20 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-600 block">Critical Stock Shortages</span>
+            <div class="text-3xl font-black text-rose-700 mt-1">{{ low_stock_count }}</div>
+            <p class="text-xs text-rose-500 mt-0.5">Medicines requiring replenishment</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-blue-600 block">Registered Medicine Master</span>
+            <div class="text-3xl font-black text-slate-900 mt-1">{{ total_medicines }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Total unique products</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600 block">Recent Batches</span>
+            <div class="text-3xl font-black text-teal-800 mt-1">{{ recent_batches|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Active batches logged</p>
+        </div>
+    </div>
+
+    <!-- Inventory Batches -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="package" class="w-5 h-5 text-blue-600"></i>
+                <h3 class="font-bold text-slate-900 text-base">Recent Stock Batches & Expiry Dates</h3>
+            </div>
+            <a href="{% url 'pharmacy:medicine_list' %}" class="text-xs font-bold text-blue-600 hover:underline">Medicine Master &rarr;</a>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for b in recent_batches %}
+            <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-900 text-sm">{{ b.medicine.name }}</h4>
+                    <p class="text-xs text-slate-500">Batch: <span class="font-mono font-bold">{{ b.batch_number }}</span> &bull; Expiry: <span class="font-bold text-slate-700">{{ b.expiry_date }}</span></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
+                        {{ b.quantity_available }} Units Available
+                    </span>
+                    <a href="{% url 'pharmacy:batch_add' b.medicine.id %}" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition">
+                        Add Stock
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-400 text-xs">No recent batches found.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

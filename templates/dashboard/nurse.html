@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Nurse Dashboard | Apex Clinic OS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Role Welcome Banner -->
+    <div class="bg-gradient-to-r from-pink-900 to-rose-950 text-white p-6 rounded-3xl shadow-lg border border-pink-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-pink-500/20 text-pink-300 border border-pink-500/30 flex items-center justify-center font-bold text-xl shrink-0">
+                <i data-lucide="heart-pulse" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-pink-400">Nursing Station & Triage</span>
+                <h1 class="text-2xl font-black text-white tracking-tight">Nurse Vitals & In-Patient Care</h1>
+                <p class="text-xs text-pink-200/80 mt-1">Patient Vitals &bull; Nursing Records &bull; Pre-Consultation Triage</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'appointments:queue_board' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-400 text-slate-950 font-black text-xs transition shadow-md">
+                <i data-lucide="list-ordered" class="w-4 h-4"></i> View Waiting Queue
+            </a>
+        </div>
+    </div>
+
+    <!-- Nurse KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-pink-600 block">Vitals Pending</span>
+            <div class="text-3xl font-black text-pink-600 mt-1">{{ vitals_pending|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Patients needing vitals recording</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600 block">Total Checked In</span>
+            <div class="text-3xl font-black text-slate-900 mt-1">{{ today_appointments|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Today's total patients</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 block">Consultations Today</span>
+            <div class="text-3xl font-black text-emerald-600 mt-1">{{ recent_consultations|length }}</div>
+            <p class="text-xs text-slate-400 mt-0.5">Clinical records documented</p>
+        </div>
+    </div>
+
+    <!-- Triage Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="activity" class="w-5 h-5 text-pink-600"></i>
+                <h3 class="font-bold text-slate-900 text-base">Patients Awaiting Pre-Consultation Vitals</h3>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-50 text-pink-700">
+                {{ vitals_pending|length }} In Triage
+            </span>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for appt in vitals_pending %}
+            <div class="p-4 hover:bg-slate-50/70 transition flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-pink-100 text-pink-800 font-black text-sm flex items-center justify-center shrink-0">
+                        {{ appt.token_number }}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">{{ appt.patient.full_name }}</h4>
+                        <p class="text-xs text-slate-400">MRN: {{ appt.patient.mrn_number }} &bull; Age: {{ appt.patient.age|default:"N/A" }} &bull; Gender: {{ appt.patient.get_gender_display }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{% url 'consultations:create' %}?appointment_id={{ appt.id }}" class="px-3.5 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm">
+                        <i data-lucide="heart" class="w-3.5 h-3.5"></i> Record Vitals
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-400 text-xs">
+                All waiting patients have had their vitals triaged.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

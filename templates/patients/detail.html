@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ patient.full_name }} | Comprehensive EMR Profile{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Patient Top Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'patients:list' %}" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ patient.full_name }}</h1>
+                    <span class="px-2.5 py-0.5 rounded-lg bg-teal-50 text-teal-800 text-xs font-mono font-bold border border-teal-200">
+                        {{ patient.patient_id|default:patient.id }}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    {{ patient.age }} yrs &bull; {{ patient.get_gender_display }} &bull; Blood: <strong class="text-rose-600">{{ patient.blood_group }}</strong> &bull; Registered {{ patient.created_at|date:"M d, Y" }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick EMR Action Buttons -->
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'appointments:list' %}?patient_id={{ patient.pk }}&open_booking=1" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-sm">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i> Reception Check-In &rarr;
+            </a>
+            {% if can_view_consultations %}
+            <a href="{% url 'consultations:create' %}?patient_id={{ patient.pk }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition shadow-sm">
+                <i data-lucide="stethoscope" class="w-4 h-4"></i> Doctor Checkup
+            </a>
+            {% endif %}
+            {% if can_view_laboratory %}
+            <a href="{% url 'laboratory:order_create' %}?patient_id={{ patient.pk }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition shadow-sm">
+                <i data-lucide="test-tube" class="w-4 h-4"></i> Lab Test
+            </a>
+            {% endif %}
+            {% if can_view_pharmacy %}
+            <a href="{% url 'pharmacy:dispense_create' %}?patient_id={{ patient.pk }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm">
+                <i data-lucide="pill" class="w-4 h-4"></i> Dispense
+            </a>
+            {% endif %}
+            {% if can_view_billing %}
+            <a href="{% url 'billing:invoice_create' %}?patient_id={{ patient.pk }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition">
+                <i data-lucide="receipt" class="w-4 h-4"></i> Bill
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Patient Details & Alerts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Demographics & Clinical Alerts (1 col) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3 flex items-center gap-2">
+                <i data-lucide="user" class="w-4 h-4 text-teal-600"></i> Demographics
+            </h3>
+
+            <div class="space-y-2.5 text-xs">
+                <div>
+                    <span class="text-slate-400 font-medium block">Phone Number</span>
+                    <span class="text-slate-800 font-bold">{{ patient.phone }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-medium block">Email</span>
+                    <span class="text-slate-800">{{ patient.email|default:"Not specified" }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-medium block">Address</span>
+                    <span class="text-slate-700">{{ patient.address|default:"Not specified" }}</span>
+                </div>
+                {% if patient.emergency_contact_name %}
+                <div class="pt-2 border-t border-slate-100">
+                    <span class="text-slate-400 font-medium block">Emergency Contact</span>
+                    <span class="text-slate-800 font-semibold">{{ patient.emergency_contact_name }} ({{ patient.emergency_contact_phone }})</span>
+                </div>
+                {% endif %}
+
+                <!-- Allergy Alert -->
+                <div class="pt-2 border-t border-slate-100">
+                    <span class="text-slate-400 font-bold uppercase tracking-wider block">Allergies</span>
+                    <p class="text-xs font-bold text-rose-700 bg-rose-50 p-2.5 rounded-lg mt-1 border border-rose-200">
+                        {{ patient.allergies|default:"No known drug allergies (NKDA)" }}
+                    </p>
+                </div>
+
+                {% if patient.chronic_conditions %}
+                <div>
+                    <span class="text-slate-400 font-bold uppercase tracking-wider block">Chronic Conditions</span>
+                    <p class="text-xs font-semibold text-amber-800 bg-amber-50 p-2.5 rounded-lg mt-1 border border-amber-200">
+                        {{ patient.chronic_conditions }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Longitudinal EMR Modules (3 cols) -->
+        <div class="lg:col-span-3 space-y-6">
+            <!-- 1. Clinical Consultations & Prescriptions -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i data-lucide="file-heart" class="w-4 h-4 text-teal-600"></i> Doctor Consultations & Prescriptions ({{ consultations.count }})
+                    </h3>
+                    <a href="{% url 'consultations:create' %}?patient_id={{ patient.pk }}" class="text-xs font-semibold text-teal-600 hover:underline">+ New Encounter</a>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    {% for c in consultations %}
+                    <div class="p-6 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400">{{ c.consultation_date|date:"F d, Y - h:i A" }}</span>
+                                <h4 class="text-base font-bold text-slate-900 mt-0.5">{{ c.diagnosis }}</h4>
+                                <p class="text-xs text-slate-600 mt-0.5">Consulted by <strong class="text-slate-800">Dr. {{ c.doctor.name }}</strong></p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="{% url 'consultations:print_rx' c.pk %}" target="_blank" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5"></i> Rx
+                                </a>
+                                <a href="{% url 'consultations:detail' c.pk %}" class="px-3 py-1.5 rounded-lg bg-teal-50 text-xs font-semibold text-teal-700 hover:bg-teal-100">
+                                    Full Notes &rarr;
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Vitals Pill -->
+                        <div class="flex flex-wrap gap-4 py-1.5 px-3 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-600">
+                            {% if c.blood_pressure %}<span><strong>BP:</strong> {{ c.blood_pressure }}</span>{% endif %}
+                            {% if c.pulse %}<span><strong>Pulse:</strong> {{ c.pulse }} bpm</span>{% endif %}
+                            {% if c.temperature %}<span><strong>Temp:</strong> {{ c.temperature }} °F</span>{% endif %}
+                            {% if c.spo2 %}<span><strong>SpO2:</strong> {{ c.spo2 }}%</span>{% endif %}
+                        </div>
+
+                        <!-- Prescriptions -->
+                        {% if c.prescriptions.exists %}
+                        <div class="pt-1">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Prescribed Medicines:</span>
+                            <div class="mt-1 flex flex-wrap gap-2">
+                                {% for rx in c.prescriptions.all %}
+                                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
+                                    {{ rx.medicine_name }} ({{ rx.dosage }} &bull; {{ rx.frequency }} x {{ rx.duration_days }}d)
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center text-xs text-slate-400">No previous consultations recorded.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 2. Diagnostic Laboratory Reports -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i data-lucide="test-tube-2" class="w-4 h-4 text-teal-600"></i> Diagnostic Lab Orders & Reports ({{ lab_orders.count }})
+                    </h3>
+                    {% if can_view_laboratory %}
+                    <a href="{% url 'laboratory:order_create' %}?patient_id={{ patient.pk }}" class="text-xs font-semibold text-teal-600 hover:underline">+ Order Test</a>
+                    {% endif %}
+                </div>
+                <div class="divide-y divide-slate-100">
+                    {% for o in lab_orders %}
+                    <div class="p-4 flex items-center justify-between hover:bg-slate-50/50">
+                        <div>
+                            <span class="font-mono font-bold text-teal-700 text-xs">{{ o.order_number }}</span>
+                            <span class="ml-2 text-xs font-bold text-slate-800">{{ o.created_at|date:"M d, Y" }}</span>
+                            <div class="text-xs text-slate-500 mt-0.5">
+                                Tests: {% for it in o.items.all %}{{ it.test.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold {% if o.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                                {{ o.get_status_display }}
+                            </span>
+                            {% if can_view_laboratory %}
+                            <a href="{% url 'laboratory:detail' o.pk %}" class="text-xs font-semibold text-teal-600 hover:underline">
+                                View &rarr;
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center text-xs text-slate-400">No laboratory investigations ordered.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 3. Billing & Invoices -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i data-lucide="receipt" class="w-4 h-4 text-teal-600"></i> Financial Invoices & Receipts ({{ invoices.count }})
+                    </h3>
+                    {% if can_view_billing %}
+                    <a href="{% url 'billing:invoice_create' %}?patient_id={{ patient.pk }}" class="text-xs font-semibold text-teal-600 hover:underline">+ Bill Patient</a>
+                    {% endif %}
+                </div>
+                <div class="divide-y divide-slate-100">
+                    {% for inv in invoices %}
+                    <div class="p-4 flex items-center justify-between hover:bg-slate-50/50">
+                        <div>
+                            <span class="font-mono font-bold text-teal-700 text-xs">{{ inv.invoice_number }}</span>
+                            <span class="ml-2 text-xs text-slate-500">{{ inv.created_at|date:"M d, Y" }}</span>
+                            <div class="text-xs font-bold text-slate-900 mt-0.5">Total: ₹{{ inv.total_amount }} | Paid: ₹{{ inv.paid_amount }}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-bold {% if inv.status == 'PAID' %}bg-emerald-50 text-emerald-700{% else %}bg-rose-50 text-rose-700{% endif %}">
+                                {{ inv.get_status_display }}
+                            </span>
+                            <a href="{% url 'billing:invoice_detail' inv.pk %}" class="text-xs font-semibold text-teal-600 hover:underline">
+                                Details &rarr;
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center text-xs text-slate-400">No invoices issued.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
