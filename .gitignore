@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local environment
+.env
+venv/
+env/
+ENV/
+
+# Static & media collection
+staticfiles/
+media/
+
+# SQLite (optional: keep if preloaded demo data is wanted)
+# db.sqlite3
