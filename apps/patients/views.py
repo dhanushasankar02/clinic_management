@@ -8,7 +8,7 @@ from apps.clinics.models import Clinic
 from django.contrib.auth.decorators import login_required
 from apps.accounts.decorators import role_required, get_dashboard_url_for_user
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'PHARMACIST', 'LAB_TECH', 'ACCOUNTANT'])
 def patient_list(request):
     clinic = Clinic.objects.first()
     search = request.GET.get('q', '').strip()
@@ -97,7 +97,7 @@ def patient_detail(request, pk):
         messages.error(request, "Access restricted. You may only view your own patient profile.")
         return redirect('portal:dashboard')
 
-    allowed_staff = ['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE']
+    allowed_staff = ['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'PHARMACIST', 'LAB_TECH', 'ACCOUNTANT']
     if not (request.user.is_superuser or role in allowed_staff):
         messages.error(request, "Access restricted. You do not have permission to view patient records.")
         return redirect(get_dashboard_url_for_user(request.user))
@@ -108,10 +108,10 @@ def patient_detail(request, pk):
     invoices = patient.invoices.prefetch_related('items', 'payments').all()
     dispensations = patient.pharmacy_dispensations.prefetch_related('items__batch__medicine').all()
 
-    can_view_consultations = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR']
-    can_view_laboratory = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'LAB_TECH', 'DOCTOR']
-    can_view_pharmacy = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'DOCTOR']
-    can_view_billing = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']
+    can_view_consultations = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST']
+    can_view_laboratory = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'LAB_TECH', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+    can_view_pharmacy = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'DOCTOR', 'RECEPTIONIST', 'NURSE']
+    can_view_billing = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST', 'DOCTOR', 'PHARMACIST']
 
     return render(request, 'patients/detail.html', {
         'patient': patient,

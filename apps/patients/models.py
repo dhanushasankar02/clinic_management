@@ -57,15 +57,33 @@ class Patient(TimeStampedModel):
         from django.contrib.auth.models import User
         base_name = self.first_name.lower().strip().replace(' ', '_') if self.first_name else 'patient'
         base_name = ''.join(c for c in base_name if c.isalnum() or c == '_') or 'patient'
-        uname = base_name
-        counter = 1
+        
+        # Reuse existing unattached patient user if one already exists
+        existing_u = User.objects.filter(username=base_name).first()
+        if existing_u and (not hasattr(existing_u, 'patient_record') or existing_u.patient_record is None) and not existing_u.is_staff and not existing_u.is_superuser:
+            self.user = existing_u
+            UserProfile.objects.get_or_create(user=existing_u, defaults={'clinic': self.clinic, 'role': 'PATIENT', 'phone': self.phone})
+            Patient.objects.filter(pk=self.pk).update(user=existing_u)
+            return existing_u
+
         clean_phone = ''.join(c for c in (self.phone or '') if c.isdigit())
-        phone_suffix = clean_phone[-4:] if len(clean_phone) >= 4 else str(self.pk or counter)
-        while User.objects.filter(username=uname).exists():
-            uname = f"{base_name}_{phone_suffix}"
-            if User.objects.filter(username=uname).exists():
+        phone_suffix = clean_phone[-4:] if len(clean_phone) >= 4 else str(self.pk or 1)
+        phone_uname = f"{base_name}_{phone_suffix}"
+        existing_phone_u = User.objects.filter(username=phone_uname).first()
+        if existing_phone_u and (not hasattr(existing_phone_u, 'patient_record') or existing_phone_u.patient_record is None) and not existing_phone_u.is_staff and not existing_phone_u.is_superuser:
+            self.user = existing_phone_u
+            UserProfile.objects.get_or_create(user=existing_phone_u, defaults={'clinic': self.clinic, 'role': 'PATIENT', 'phone': self.phone})
+            Patient.objects.filter(pk=self.pk).update(user=existing_phone_u)
+            return existing_phone_u
+
+        uname = base_name
+        if User.objects.filter(username=uname).exists():
+            uname = phone_uname
+            counter = 1
+            while User.objects.filter(username=uname).exists():
                 uname = f"{base_name}_{phone_suffix}_{counter}"
                 counter += 1
+
         u = User.objects.create_user(
             username=uname,
             email=self.email or '',
@@ -82,6 +100,12 @@ class Patient(TimeStampedModel):
         self.user = u
         Patient.objects.filter(pk=self.pk).update(user=u)
         return u
+
+    def delete(self, *args, **kwargs):
+        u = self.user
+        super().delete(*args, **kwargs)
+        if u and not u.is_staff and not u.is_superuser:
+            u.delete()
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

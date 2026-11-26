@@ -106,6 +106,14 @@ def login_view(request):
             'accounting': 'accountant',
             'superadmin': 'admin',
             'administrator': 'admin',
+            'dr_arun': 'doctor',
+            'arun': 'doctor',
+            'dr_sarah': 'dr_sarah',
+            'sarah': 'dr_sarah',
+            'dr_priya': 'dr_priya',
+            'priya': 'dr_priya',
+            'dr_vikram': 'dr_vikram',
+            'vikram': 'dr_vikram',
         }
         canonical_demo = alias_map.get(demo_user.lower().strip(), demo_user)
         user = User.objects.filter(username__iexact=canonical_demo).first()
@@ -146,6 +154,14 @@ def login_view(request):
                 'accounting': 'accountant',
                 'superadmin': 'admin',
                 'administrator': 'admin',
+                'dr_arun': 'doctor',
+                'arun': 'doctor',
+                'dr_sarah': 'dr_sarah',
+                'sarah': 'dr_sarah',
+                'dr_priya': 'dr_priya',
+                'priya': 'dr_priya',
+                'dr_vikram': 'dr_vikram',
+                'vikram': 'dr_vikram',
             }
             clean_input = username.strip()
             canonical_username = alias_map.get(clean_input.lower(), clean_input)
@@ -203,6 +219,9 @@ def login_view(request):
                 pwd_variants = {
                     'admin': ['admin123', 'admin', 'password', 'password123'],
                     'doctor': ['doctor123', 'doctor', 'password', 'password123'],
+                    'dr_sarah': ['doctor123', 'doctor', 'password', 'password123'],
+                    'dr_priya': ['doctor123', 'doctor', 'password', 'password123'],
+                    'dr_vikram': ['doctor123', 'doctor', 'password', 'password123'],
                     'patient': ['patient123', 'patient', 'password', 'password123'],
                     'pharmacist': ['pharma123', 'pharmacist123', 'pharmacist'],
                     'accountant': ['account123', 'accountant123', 'accountant'],
@@ -300,6 +319,8 @@ def login_view(request):
             messages.error(request, "Invalid username/email or password. Please verify your credentials and try again.")
 
     clinic = Clinic.objects.first()
+    from apps.doctors.models import Doctor
+    all_doctors = Doctor.objects.filter(clinic=clinic, is_available=True).select_related('specialty', 'user')
     demo_accounts = [
         {'role': 'Super Admin', 'username': 'admin', 'pass': 'admin123', 'color': 'teal', 'desc': 'Full system control'},
         {'role': 'Doctor', 'username': 'doctor', 'pass': 'doctor123', 'color': 'emerald', 'desc': 'Consultations & EMR'},
@@ -316,6 +337,7 @@ def login_view(request):
         'next': next_url or '',
         'entered_username': entered_username,
         'demo_accounts': demo_accounts,
+        'all_doctors': all_doctors,
     })
 
 

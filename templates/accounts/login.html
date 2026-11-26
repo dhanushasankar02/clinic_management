@@ -19,214 +19,277 @@
     <div class="absolute -top-32 -left-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="w-full max-w-lg relative z-10 my-8">
-        <!-- Brand Header -->
-        <div class="text-center mb-6">
-            <div class="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 items-center justify-center text-white shadow-xl shadow-teal-500/20 mb-3 border border-white/20">
-                <i data-lucide="cross" class="w-8 h-8"></i>
-            </div>
-            <h1 class="text-2xl font-black text-white tracking-tight">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</h1>
-            <p class="text-xs text-teal-400 font-semibold tracking-wider uppercase mt-1">Hospital & Clinical Management System</p>
-        </div>
-
-        <!-- Login Card -->
-        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/50 space-y-6">
-            <div>
-                <h2 class="text-xl font-bold text-white tracking-tight">Staff & Patient Sign In</h2>
-                <p class="text-xs text-slate-400 mt-1">Authenticate to access clinical records, consultations, operations, and patient services.</p>
-            </div>
-
-            <!-- Patient Portal Quick Switch Banner -->
-            <div class="p-3 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2 text-teal-300 font-semibold">
-                    <i data-lucide="heart-pulse" class="w-4 h-4 text-teal-400"></i>
-                    <span>Visiting as a Patient?</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="{% url 'portal:register' %}" class="px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition text-[11px] shadow-sm shadow-teal-500/20">
-                        Register Online
-                    </a>
-                </div>
-            </div>
-
-            <!-- Flash Messages -->
-            {% if messages %}
-            <div class="space-y-2">
-                {% for message in messages %}
-                <div class="p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 {% if message.tags == 'error' %}bg-rose-500/15 border border-rose-500/30 text-rose-300{% elif message.tags == 'warning' %}bg-amber-500/15 border border-amber-500/30 text-amber-300{% else %}bg-teal-500/15 border border-teal-500/30 text-teal-300{% endif %}">
-                    <i data-lucide="{% if message.tags == 'error' %}alert-circle{% elif message.tags == 'warning' %}alert-triangle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
-                    <span>{{ message }}</span>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Login Form -->
-            <form method="POST" action="{% url 'accounts:login' %}" class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ next }}">
-
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username, Email, Mobile No., or Patient ID</label>
-                    <div class="relative">
-                        <i data-lucide="user" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"></i>
-                        <input type="text" name="username" id="username_input" value="{{ entered_username }}" required placeholder="e.g. dhanusha, 8438467026, or PAT-1020" class="w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition">
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Password</label>
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-[11px] text-emerald-400 hover:text-emerald-300 cursor-pointer font-semibold" onclick="fillCredentials('dhanusha', 'patient123')">Auto-fill Patient</span>
-                            <span class="text-slate-600">&bull;</span>
-                            <span class="text-[11px] text-teal-400 hover:text-teal-300 cursor-pointer font-semibold" onclick="fillCredentials('admin', 'admin123')">Auto-fill Admin</span>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"></i>
-                        <input type="password" name="password" id="password_input" required placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition">
-                        <button type="button" onclick="togglePassword()" class="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300">
-                            <i data-lucide="eye" id="eyeIcon" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
-                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-teal-600 focus:ring-teal-500 focus:ring-offset-slate-900">
-                        <span>Keep me signed in</span>
-                    </label>
-                    <span class="text-slate-500 text-[11px]">Apex Clinical OS</span>
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-teal-600/30 transition flex items-center justify-center gap-2">
-                    <i data-lucide="log-in" class="w-4 h-4"></i> Sign In to Clinic OS
-                </button>
-            </form>
-
-            <!-- Quick One-Click Demo Logins & Credentials Cheatsheet -->
-            <div class="pt-5 border-t border-slate-800/80">
-                <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                        <i data-lucide="key" class="w-3.5 h-3.5 text-teal-400"></i> Fast Role Sign-in (1-Click Demo)
-                    </p>
-                    <span class="text-[10px] text-teal-400 font-semibold">Click to login directly</span>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <!-- Admin -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-teal-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=admin" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-teal-400 group-hover:text-teal-300">Admin</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-teal-400"></i>
+    <div class="w-full max-w-5xl relative z-10 my-8">
+        <!-- Main Card Container -->
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl shadow-black/50 overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12">
+                
+                <!-- LEFT SIDE: Credential Sign In Form (5 cols) -->
+                <div class="lg:col-span-5 p-7 sm:p-9 border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col justify-between space-y-6">
+                    <div>
+                        <!-- Brand Header -->
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-teal-500/20 border border-white/20 shrink-0">
+                                <i data-lucide="cross" class="w-7 h-7"></i>
                             </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">admin</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: admin123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('admin', 'admin123')" class="mt-1 text-[9px] text-teal-400/80 hover:text-teal-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Doctor -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=doctor" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-emerald-400 group-hover:text-emerald-300">Doctor</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-emerald-400"></i>
-                            </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">doctor</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: doctor123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('doctor', 'doctor123')" class="mt-1 text-[9px] text-emerald-400/80 hover:text-emerald-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Reception -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=reception" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-amber-400 group-hover:text-amber-300">Reception</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-amber-400"></i>
-                            </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">reception</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: reception123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('reception', 'reception123')" class="mt-1 text-[9px] text-amber-400/80 hover:text-amber-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Lab Tech -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=labtech" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-indigo-400 group-hover:text-indigo-300">Lab Tech</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-indigo-400"></i>
-                            </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">labtech</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: labtech123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('labtech', 'labtech123')" class="mt-1 text-[9px] text-indigo-400/80 hover:text-indigo-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Pharmacy -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-rose-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=pharmacist" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-rose-400 group-hover:text-rose-300">Pharmacy</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-rose-400"></i>
-                            </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">pharmacist</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: pharma123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('pharmacist', 'pharma123')" class="mt-1 text-[9px] text-rose-400/80 hover:text-rose-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Accountant -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=accountant" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-cyan-400 group-hover:text-cyan-300">Accountant</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-cyan-400"></i>
-                            </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">accountant</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: account123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('accountant', 'account123')" class="mt-1 text-[9px] text-cyan-400/80 hover:text-cyan-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Inventory -->
-                    <div class="p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-blue-500/50 text-left transition group relative">
-                        <a href="{% url 'accounts:login' %}?demo=inventory" class="block">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-blue-400 group-hover:text-blue-300">Inventory</span>
-                                <i data-lucide="chevron-right" class="w-3 h-3 text-slate-600 group-hover:text-blue-400"></i>
-                            </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5 font-mono">user: <strong class="text-slate-200">inventory</strong></span>
-                            <span class="text-[10px] text-slate-500 block font-mono">pass: inventory123</span>
-                        </a>
-                        <button type="button" onclick="fillCredentials('inventory', 'inventory123')" class="mt-1 text-[9px] text-blue-400/80 hover:text-blue-300 underline font-semibold">Auto-fill &uarr;</button>
-                    </div>
-
-                    <!-- Patient Portal (Demo) -->
-                    <div class="p-2.5 rounded-xl bg-teal-950/40 hover:bg-teal-900/50 border border-teal-500/30 hover:border-teal-400 text-left transition group col-span-2 sm:col-span-4 flex items-center justify-between">
-                        <a href="{% url 'accounts:login' %}?demo=patient" class="flex-1 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
                             <div>
-                                <span class="text-xs font-bold text-teal-300 group-hover:text-teal-200">Patient Portal Demo (Rahul Verma)</span>
-                                <span class="text-[10px] text-slate-400 block">user: <strong class="text-teal-200 font-mono">patient</strong> &bull; pass: <strong class="text-teal-200 font-mono">patient123</strong></span>
+                                <h1 class="text-xl font-black text-white tracking-tight leading-tight">{{ clinic.name|default:"Apex Multi-Specialty Clinic" }}</h1>
+                                <p class="text-[11px] text-teal-400 font-bold tracking-wider uppercase">Clinical OS &bull; RBAC</p>
                             </div>
-                        </a>
-                        <div class="flex items-center gap-2">
-                            <button type="button" onclick="fillCredentials('patient', 'patient123')" class="px-2 py-1 rounded bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 text-[10px] font-bold">Auto-fill</button>
-                            <a href="{% url 'accounts:login' %}?demo=patient" class="text-[10px] font-bold text-teal-400 inline-flex items-center gap-1 hover:underline">1-Click Sign-in &rarr;</a>
                         </div>
+
+                        <div class="mb-5">
+                            <h2 class="text-lg font-bold text-white tracking-tight">Staff & Patient Sign In</h2>
+                            <p class="text-xs text-slate-400 mt-1">Enter your account credentials to access your designated workspace.</p>
+                        </div>
+
+                        <!-- Patient Portal Banner -->
+                        <div class="p-3 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-center justify-between text-xs mb-5">
+                            <div class="flex items-center gap-2 text-teal-300 font-semibold">
+                                <i data-lucide="heart-pulse" class="w-4 h-4 text-teal-400 shrink-0"></i>
+                                <span>Visiting as a Patient?</span>
+                            </div>
+                            <a href="{% url 'portal:register' %}" class="px-2.5 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition text-[11px] shadow-sm shadow-teal-500/20">
+                                Register Online
+                            </a>
+                        </div>
+
+                        <!-- Flash Messages -->
+                        {% if messages %}
+                        <div class="space-y-2 mb-5">
+                            {% for message in messages %}
+                            <div class="p-3 rounded-xl text-xs font-semibold flex items-center gap-2.5 {% if message.tags == 'error' %}bg-rose-500/15 border border-rose-500/30 text-rose-300{% elif message.tags == 'warning' %}bg-amber-500/15 border border-amber-500/30 text-amber-300{% else %}bg-teal-500/15 border border-teal-500/30 text-teal-300{% endif %}">
+                                <i data-lucide="{% if message.tags == 'error' %}alert-circle{% elif message.tags == 'warning' %}alert-triangle{% else %}check-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Standard Login Form -->
+                        <form method="POST" action="{% url 'accounts:login' %}" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ next }}">
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username, Mobile, or Patient ID</label>
+                                <div class="relative">
+                                    <i data-lucide="user" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"></i>
+                                    <input type="text" name="username" id="username_input" value="{{ entered_username }}" required placeholder="e.g. dhanusha, 8438467026, or PAT-1020" class="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
+                                <div class="relative">
+                                    <i data-lucide="lock" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500"></i>
+                                    <input type="password" name="password" id="password_input" required placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition">
+                                    <button type="button" onclick="togglePassword()" class="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300">
+                                        <i data-lucide="eye" id="eyeIcon" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-teal-600 focus:ring-teal-500 focus:ring-offset-slate-900">
+                                    <span>Keep me signed in</span>
+                                </label>
+                                <span class="text-slate-500 text-[11px]">Apex Clinical OS</span>
+                            </div>
+
+                            <button type="submit" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-teal-600/30 transition flex items-center justify-center gap-2 active:scale-98">
+                                <i data-lucide="log-in" class="w-4 h-4"></i> Sign In to Clinic OS
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="pt-4 text-center border-t border-slate-800/80 text-[11px] text-slate-500">
+                        &copy; 2026 {{ clinic.name|default:"Apex Multi-Specialty Clinic" }} &bull; Role-Based Access Control
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="text-center mt-6 text-xs text-slate-500">
-            <p>&copy; 2026 {{ clinic.name|default:"Apex Multi-Specialty Clinic" }} &bull; Role-Based Access Control</p>
+                <!-- RIGHT SIDE: Clean 1-Click Role Sign-In Cards (7 cols) -->
+                <div class="lg:col-span-7 p-7 sm:p-9 bg-slate-950/40 space-y-6">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                                Quick 1-Click Role Sign-In
+                            </h3>
+                            <span class="text-[11px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30">
+                                Instant Access
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400">Select any department or doctor below to sign in directly without typing passwords:</p>
+                    </div>
+
+                    <!-- 1. Doctor Workspaces Section -->
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> Doctor Workspaces (Select Attending Doctor)
+                            </span>
+                            <span class="text-[10px] text-slate-500">Isolated Patient Consultations</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <!-- Dr. Sarah Jenkins -->
+                            <a href="{% url 'accounts:login' %}?demo=dr_sarah" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs group-hover:bg-emerald-500 group-hover:text-slate-950 transition">
+                                        DS
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition">Dr. Sarah Jenkins</div>
+                                        <div class="text-[10px] text-emerald-400/80 font-medium">General Medicine</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+
+                            <!-- Dr. Arun Sharma -->
+                            <a href="{% url 'accounts:login' %}?demo=doctor" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs group-hover:bg-emerald-500 group-hover:text-slate-950 transition">
+                                        DA
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition">Dr. Arun Sharma</div>
+                                        <div class="text-[10px] text-emerald-400/80 font-medium">Cardiology</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+
+                            <!-- Dr. Priya Nair -->
+                            <a href="{% url 'accounts:login' %}?demo=dr_priya" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs group-hover:bg-emerald-500 group-hover:text-slate-950 transition">
+                                        DP
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition">Dr. Priya Nair</div>
+                                        <div class="text-[10px] text-emerald-400/80 font-medium">Dermatology</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+
+                            <!-- Dr. Vikram Mehta -->
+                            <a href="{% url 'accounts:login' %}?demo=dr_vikram" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs group-hover:bg-emerald-500 group-hover:text-slate-950 transition">
+                                        DV
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition">Dr. Vikram Mehta</div>
+                                        <div class="text-[10px] text-emerald-400/80 font-medium">Pediatrics</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 2. Clinical Staff Desks Section -->
+                    <div class="space-y-2.5">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5 text-teal-400"></i> Clinic Department Desks
+                        </span>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <!-- Reception -->
+                            <a href="{% url 'accounts:login' %}?demo=reception" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-amber-950/30 border border-slate-800 hover:border-amber-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                                        <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-amber-300 transition">Reception Desk</div>
+                                        <div class="text-[10px] text-slate-400">Tokens, Check-in & Queue</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-amber-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+
+                            <!-- Pharmacy -->
+                            <a href="{% url 'accounts:login' %}?demo=pharmacist" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:bg-rose-500 group-hover:text-slate-950 transition">
+                                        <i data-lucide="pill" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-rose-300 transition">Pharmacy Counter</div>
+                                        <div class="text-[10px] text-slate-400">Dispensing & Medicines</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-rose-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+
+                            <!-- Laboratory -->
+                            <a href="{% url 'accounts:login' %}?demo=labtech" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-indigo-950/30 border border-slate-800 hover:border-indigo-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-slate-950 transition">
+                                        <i data-lucide="test-tube-2" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-indigo-300 transition">Diagnostic Lab</div>
+                                        <div class="text-[10px] text-slate-400">Lab Orders & Test Reports</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+
+                            <!-- Billing & Accounting -->
+                            <a href="{% url 'accounts:login' %}?demo=accountant" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-cyan-950/30 border border-slate-800 hover:border-cyan-500/50 transition group flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-950 transition">
+                                        <i data-lucide="receipt" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition">Billing & Accounts</div>
+                                        <div class="text-[10px] text-slate-400">Invoices, Tariffs & Revenue</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 3. Executive Administration & Patient Portal -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <!-- Super Admin -->
+                        <a href="{% url 'accounts:login' %}?demo=admin" class="p-3 rounded-2xl bg-teal-950/30 hover:bg-teal-900/40 border border-teal-500/30 hover:border-teal-400 transition group flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 group-hover:bg-teal-500 group-hover:text-slate-950 transition">
+                                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-teal-300 group-hover:text-teal-200 transition">Clinic Administrator</div>
+                                    <div class="text-[10px] text-slate-400">Full Executive OS Control</div>
+                                </div>
+                            </div>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-teal-500 group-hover:translate-x-0.5 transition"></i>
+                        </a>
+
+                        <!-- Patient Portal Demo -->
+                        <a href="{% url 'accounts:login' %}?demo=patient" class="p-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition group flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:bg-slate-700 transition">
+                                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white group-hover:text-slate-200 transition">Patient Portal Demo</div>
+                                    <div class="text-[10px] text-slate-400">Patient Records & Booking</div>
+                                </div>
+                            </div>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-600 group-hover:text-slate-300 group-hover:translate-x-0.5 transition"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -244,11 +307,6 @@
                 eye.setAttribute('data-lucide', 'eye');
             }
             lucide.createIcons();
-        }
-
-        function fillCredentials(username, password) {
-            document.getElementById('username_input').value = username;
-            document.getElementById('password_input').value = password;
         }
     </script>
 </body>

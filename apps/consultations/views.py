@@ -25,10 +25,17 @@ class PrescriptionItemViewSet(viewsets.ModelViewSet):
 
 
 # Frontend Views
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'NURSE'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST', 'LAB_TECH', 'ACCOUNTANT'])
 def consultation_list(request):
     query = request.GET.get('q', '').strip()
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else None
+    current_doctor = getattr(request.user, 'doctor_profile', None) or Doctor.objects.filter(user=request.user).first()
+
     consultations = Consultation.objects.select_related('patient', 'doctor').all()
+    if role == 'DOCTOR' and current_doctor and request.GET.get('all') != '1':
+        consultations = consultations.filter(doctor=current_doctor)
+
     if query:
         consultations = consultations.filter(
             models.Q(patient__first_name__icontains=query) |
@@ -39,6 +46,7 @@ def consultation_list(request):
     return render(request, 'consultations/list.html', {
         'consultations': consultations,
         'query': query,
+        'current_doctor': current_doctor,
     })
 
 
@@ -89,11 +97,36 @@ def _clean_pos_dec(raw):
 
 @role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'])
 def consultation_create(request, appointment_id=None):
+    from apps.clinics.models import Clinic
+    clinic = Clinic.objects.first()
     patient_id = request.GET.get('patient_id') or request.POST.get('patient')
     appointment_id = appointment_id or request.GET.get('appointment_id') or request.POST.get('appointment')
     
     selected_patient = Patient.objects.filter(pk=patient_id).first() if patient_id else None
     selected_appointment = Appointment.objects.filter(pk=appointment_id).first() if appointment_id else None
+
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else None
+    current_doctor = getattr(request.user, 'doctor_profile', None) or Doctor.objects.filter(user=request.user).first()
+
+    # Identify the specific attending doctor:
+    # 1. From selected appointment (the booked doctor)
+    # 2. Or from the currently logged in doctor
+    attending_doctor = None
+    if selected_appointment and selected_appointment.doctor:
+        attending_doctor = selected_appointment.doctor
+    elif role == 'DOCTOR' and current_doctor:
+        attending_doctor = current_doctor
+
+    # Find the NEXT patient in queue waiting for this specific doctor
+    next_waiting_appt = None
+    if attending_doctor:
+        exclude_ids = [selected_appointment.pk] if selected_appointment else []
+        next_waiting_appt = Appointment.objects.filter(
+            clinic=clinic,
+            doctor=attending_doctor,
+            status__in=['WAITING', 'CHECKED_IN']
+        ).exclude(pk__in=exclude_ids).select_related('patient', 'doctor').order_by('check_in_time', 'appointment_time', 'id').first()
 
     if request.method == 'POST':
         try:
@@ -116,6 +149,10 @@ def consultation_create(request, appointment_id=None):
                         appt.status = 'COMPLETED'
                         appt.save()
 
+                target_dest = request.POST.get('target_destination', '').strip()
+                no_followup = request.POST.get('no_followup_needed') in ['1', 'on', 'true', True] or target_dest == 'all_good'
+                follow_up = None if no_followup else (request.POST.get('follow_up_date') or None)
+
                 consultation = Consultation.objects.create(
                     patient=patient,
                     doctor=doctor,
@@ -127,12 +164,12 @@ def consultation_create(request, appointment_id=None):
                     spo2=_clean_pos_int(spo2),
                     height_cm=_clean_pos_dec(height),
                     weight_kg=_clean_pos_dec(weight),
-                    chief_complaints=request.POST.get('chief_complaints', '').strip(),
+                    chief_complaints=request.POST.get('chief_complaints', '').strip() or 'Routine checkup / wellness evaluation',
                     examination_notes=request.POST.get('examination_notes', '').strip(),
-                    diagnosis=request.POST.get('diagnosis', '').strip(),
+                    diagnosis=request.POST.get('diagnosis', '').strip() or 'Patient in good health / Normal routine checkup. All good.',
                     treatment_plan=request.POST.get('treatment_plan', '').strip(),
                     clinical_notes=request.POST.get('clinical_notes', '').strip(),
-                    follow_up_date=request.POST.get('follow_up_date') or None,
+                    follow_up_date=follow_up,
                 )
 
                 # Process Dynamic Prescriptions
@@ -143,24 +180,26 @@ def consultation_create(request, appointment_id=None):
                 durations = request.POST.getlist('med_duration[]')
                 instructions = request.POST.getlist('med_instructions[]')
 
-                for i in range(len(med_names)):
-                    name = med_names[i].strip()
-                    if name:
-                        PrescriptionItem.objects.create(
-                            consultation=consultation,
-                            medicine_name=name,
-                            dosage=dosages[i] if i < len(dosages) and dosages[i] else "1 tablet",
-                            route=routes[i] if i < len(routes) and routes[i] else "Oral",
-                            frequency=freqs[i] if i < len(freqs) and freqs[i] else "1-0-1",
-                            duration_days=int(durations[i]) if i < len(durations) and durations[i].isdigit() else 5,
-                            instructions=instructions[i] if i < len(instructions) else "After meals",
-                        )
+                has_medicines = False
+                if target_dest != 'all_good':
+                    for i in range(len(med_names)):
+                        name = med_names[i].strip()
+                        if name:
+                            has_medicines = True
+                            PrescriptionItem.objects.create(
+                                consultation=consultation,
+                                medicine_name=name,
+                                dosage=dosages[i] if i < len(dosages) and dosages[i] else "1 tablet",
+                                route=routes[i] if i < len(routes) and routes[i] else "Oral",
+                                frequency=freqs[i] if i < len(freqs) and freqs[i] else "1-0-1",
+                                duration_days=int(durations[i]) if i < len(durations) and durations[i].isdigit() else 5,
+                                instructions=instructions[i] if i < len(instructions) else "After meals",
+                            )
 
                 # Process optional lab tests ordered
                 selected_test_ids = request.POST.getlist('lab_tests[]')
-                target_dest = request.POST.get('target_destination', '')
 
-                if selected_test_ids:
+                if selected_test_ids and target_dest != 'all_good':
                     lab_order = LabOrder.objects.create(
                         clinic=patient.clinic,
                         patient=patient,
@@ -179,11 +218,39 @@ def consultation_create(request, appointment_id=None):
                                 flag='PENDING'
                             )
 
+                    messages.success(request, f"Doctor checkup complete for {patient.full_name}! Lab Order #{lab_order.order_number} created.")
+                
+                # ------------------------------------------------------------------
+                # CLINICAL OPD QUEUE ADVANCEMENT:
+                # When checkup is completed, immediately proceed to the NEXT patient in queue!
+                # ------------------------------------------------------------------
+                next_in_queue = Appointment.objects.filter(
+                    clinic=patient.clinic,
+                    doctor=doctor,
+                    status__in=['WAITING', 'CHECKED_IN']
+                ).exclude(pk=appt.pk if appt else 0).select_related('patient', 'doctor').order_by('check_in_time', 'appointment_time', 'id').first()
+
+                if next_in_queue and (target_dest in ['next_patient', 'all_good'] or role == 'DOCTOR'):
+                    messages.success(
+                        request,
+                        f"✓ Checkup complete for {patient.full_name}! Opening NEXT patient in queue: {next_in_queue.patient.full_name} [Token #{next_in_queue.token_number}]."
+                    )
+                    return redirect(f"/consultations/new/?patient_id={next_in_queue.patient.id}&appointment_id={next_in_queue.id}")
+
+                if target_dest == 'lab':
                     messages.success(request, f"Doctor checkup complete for {patient.full_name}! Lab Order #{lab_order.order_number} created. Proceeding to Laboratory Investigation.")
                     return redirect('laboratory:detail', pk=lab_order.pk)
-                else:
-                    messages.success(request, f"Doctor checkup complete for {patient.full_name}! No lab tests required. Proceeding to Pharmacy for medicine dispensation.")
+                elif target_dest == 'pharmacy' or (has_medicines and target_dest not in ['all_good', 'next_patient']):
+                    messages.success(request, f"Doctor checkup complete for {patient.full_name}! Prescriptions recorded. Proceeding to Pharmacy for medicine dispensation.")
                     return redirect(f"/pharmacy/dispense/new/?patient_id={patient.pk}&consultation_id={consultation.pk}")
+                else:
+                    if role == 'DOCTOR':
+                        messages.success(request, f"✓ Doctor checkup complete for {patient.full_name}! All patients in your consultation queue are complete.")
+                        return redirect('appointments:queue_board')
+                    else:
+                        messages.success(request, f"Doctor checkup complete! Patient {patient.full_name} is ALL GOOD. Proceeding to Billing & Invoicing.")
+                        appt_id_val = appt.id if appt else (appointment_id or '')
+                        return redirect(f"/billing/new/?patient_id={patient.pk}&appointment_id={appt_id_val}")
 
         except Exception as e:
             messages.error(request, f"Error saving consultation: {str(e)}")
@@ -200,4 +267,7 @@ def consultation_create(request, appointment_id=None):
         'available_medicines': available_medicines,
         'selected_patient': selected_patient,
         'selected_appointment': selected_appointment,
+        'attending_doctor': attending_doctor,
+        'next_waiting_appt': next_waiting_appt,
+        'is_doctor_role': role == 'DOCTOR',
     })

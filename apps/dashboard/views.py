@@ -135,9 +135,14 @@ def doctor_dashboard(request):
     if current_doctor:
         today_appointments = today_appointments.filter(doctor=current_doctor)
 
-    waiting_queue = today_appointments.filter(status__in=['WAITING', 'CHECKED_IN'])
+    waiting_queue = today_appointments.filter(status__in=['WAITING', 'CHECKED_IN', 'BOOKED', 'CONFIRMED', 'PENDING'])
     in_consult = today_appointments.filter(status='IN_CONSULTATION').first()
     completed_today = today_appointments.filter(status='COMPLETED').count()
+
+    all_doctor_appointments = Appointment.objects.filter(clinic=clinic).select_related('doctor', 'patient', 'doctor__specialty').order_by('appointment_date', 'appointment_time')
+    if current_doctor:
+        all_doctor_appointments = all_doctor_appointments.filter(doctor=current_doctor)
+    upcoming_appointments = all_doctor_appointments.filter(appointment_date__gte=today).exclude(status__in=['CANCELLED', 'REJECTED'])[:10]
 
     recent_consultations = Consultation.objects.select_related('doctor', 'patient').order_by('-created_at')
     if current_doctor:
@@ -159,6 +164,8 @@ def doctor_dashboard(request):
         'current_doctor': current_doctor,
         'today_appointments': today_appointments,
         'waiting_queue': waiting_queue,
+        'upcoming_appointments': upcoming_appointments,
+        'all_doctor_appointments': all_doctor_appointments[:10],
         'in_consult': in_consult,
         'completed_today': completed_today,
         'recent_consultations': recent_consultations,
@@ -327,15 +334,15 @@ def my_assigned_tasks(request):
         current_doctor = getattr(request.user, 'doctor_profile', None)
         if not current_doctor:
             current_doctor = Doctor.objects.filter(user=request.user).first()
-        today_appts = Appointment.objects.filter(clinic=clinic, appointment_date=today, status__in=['WAITING', 'CHECKED_IN'])
+        today_appts = Appointment.objects.filter(clinic=clinic, appointment_date=today, status__in=['WAITING', 'CHECKED_IN', 'BOOKED', 'CONFIRMED', 'PENDING'])
         if current_doctor:
             today_appts = today_appts.filter(doctor=current_doctor)
         for a in today_appts:
             tasks.append({
                 'title': f"Consultation with {a.patient.full_name} (Token #{a.token_number})",
-                'desc': f"Scheduled for {a.appointment_time} - {a.reason_for_visit or 'General Consultation'}",
+                'desc': f"Scheduled for {a.appointment_time} - {getattr(a, 'reason', '') or 'General Consultation'}",
                 'link': f"/consultations/new/?appointment_id={a.id}",
-                'badge': 'Pending Consult',
+                'badge': a.get_status_display(),
                 'color': 'emerald'
             })
     elif role == 'RECEPTIONIST':

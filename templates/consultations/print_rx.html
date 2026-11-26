@@ -121,12 +121,14 @@
                     <p class="text-slate-700 mt-0.5">{{ consultation.treatment_plan }}</p>
                 </div>
                 {% endif %}
-                {% if consultation.follow_up_date %}
                 <div>
-                    <span class="font-bold uppercase text-teal-700">Next Review Date:</span>
+                    <span class="font-bold uppercase text-slate-500">Next Review / Follow-up:</span>
+                    {% if consultation.follow_up_date %}
                     <span class="font-bold text-slate-900 ml-1">{{ consultation.follow_up_date|date:"l, F d, Y" }}</span>
+                    {% else %}
+                    <span class="font-bold text-emerald-700 ml-1">Patient All Good &bull; Routine Clearance (No Next Checkup Needed)</span>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
 

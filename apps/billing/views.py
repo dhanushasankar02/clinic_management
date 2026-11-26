@@ -34,10 +34,10 @@ def invoice_list(request):
     profile = getattr(request.user, 'profile', None)
     role = profile.role if profile else ('SUPER_ADMIN' if is_super else 'STAFF')
     is_admin = is_super or role in ['SUPER_ADMIN', 'CLINIC_ADMIN']
-    can_manage_billing = is_admin or role in ['ACCOUNTANT', 'RECEPTIONIST']
+    can_manage_billing = is_admin or role in ['ACCOUNTANT', 'RECEPTIONIST', 'DOCTOR', 'PHARMACIST', 'NURSE', 'LAB_TECH']
 
     if not can_manage_billing:
-        messages.error(request, "Access restricted: Financial records and invoices are restricted to Administrators and Accountants.")
+        messages.error(request, "Access restricted: Financial records and invoices are restricted to Clinic Staff.")
         return redirect('dashboard:index')
 
     status_filter = request.GET.get('status', '')
@@ -109,14 +109,15 @@ def invoice_create(request):
     is_super = request.user.is_superuser
     profile = getattr(request.user, 'profile', None)
     role = profile.role if profile else ('SUPER_ADMIN' if is_super else 'STAFF')
+    is_admin = is_super or role in ['SUPER_ADMIN', 'CLINIC_ADMIN']
 
-    # Allow direct invoice creation for Billing, Accounting, Admin, and Reception.
-    # Also allow Doctors and Pharmacists when processing a patient visit (has patient_id, appointment_id, or POST patient).
+    # Full invoice creation desk is available to Billing/Accounting/Admin/Reception staff.
+    # Clinical staff (Doctors, Pharmacists, Nurses, Lab Techs) can seamlessly generate invoices during patient encounters (when patient_id or appointment_id or POST patient is provided).
     has_patient_context = bool(request.GET.get('patient_id') or request.GET.get('appointment_id') or request.POST.get('patient'))
-    can_create = is_super or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST'] or (has_patient_context and role in ['DOCTOR', 'PHARMACIST'])
+    can_create = is_admin or role in ['ACCOUNTANT', 'RECEPTIONIST'] or (has_patient_context and role in ['DOCTOR', 'PHARMACIST', 'NURSE', 'LAB_TECH'])
 
     if not can_create:
-        messages.error(request, "Access restricted: Invoice generation is handled exclusively by Accounting, Billing, and Administration desks.")
+        messages.info(request, "To create an invoice, please select a patient from patient records or appointment encounters.")
         return redirect(get_dashboard_url_for_user(request.user))
 
     patients = Patient.objects.all()
@@ -216,7 +217,7 @@ def service_catalogue(request):
     profile = getattr(request.user, 'profile', None)
     role = profile.role if profile else ('SUPER_ADMIN' if is_super else 'STAFF')
     is_admin = is_super or role in ['SUPER_ADMIN', 'CLINIC_ADMIN']
-    if not (is_admin or role in ['ACCOUNTANT', 'RECEPTIONIST']):
+    if not (is_admin or role in ['ACCOUNTANT', 'RECEPTIONIST', 'DOCTOR', 'PHARMACIST', 'NURSE', 'LAB_TECH']):
         messages.error(request, "Access restricted: Service tariff catalogue is restricted.")
         return redirect('dashboard:index')
 

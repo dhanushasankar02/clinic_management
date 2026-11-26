@@ -62,16 +62,16 @@ def user_role_context(request):
         'is_accountant': is_accountant,
         'is_inventory_mgr': is_inventory_mgr,
         'is_patient': is_patient,
-        # Fine-grained granular permissions
-        'can_view_patients': is_admin or is_doctor or is_receptionist or is_nurse,
+        # Fine-grained granular permissions for seamless clinical workflow
+        'can_view_patients': is_admin or is_doctor or is_receptionist or is_nurse or is_pharmacist or is_lab_tech or is_accountant,
         'can_view_appointments': is_admin or is_doctor or is_receptionist or is_nurse,
         'can_view_queue': is_admin or is_receptionist or is_doctor or is_nurse,
-        'can_view_consultations': is_admin or is_doctor or is_nurse,
-        'can_view_laboratory': is_admin or is_lab_tech or is_doctor or is_nurse,
-        'can_view_pharmacy': is_admin or is_pharmacist or is_inventory_mgr,
-        'can_view_billing': is_admin or is_accountant or is_receptionist,
+        'can_view_consultations': is_admin or is_doctor or is_nurse or is_receptionist or is_pharmacist,
+        'can_view_laboratory': is_admin or is_lab_tech or is_doctor or is_nurse or is_receptionist,
+        'can_view_pharmacy': is_admin or is_pharmacist or is_inventory_mgr or is_doctor or is_receptionist,
+        'can_view_billing': is_admin or is_accountant or is_receptionist or is_doctor or is_pharmacist,
         'can_view_inventory': is_admin or is_inventory_mgr or is_pharmacist,
-        'can_view_reports': is_admin or is_accountant,
+        'can_view_reports': is_admin or is_accountant or is_doctor,
         'can_view_admin_control': is_admin,
         'can_manage_users': is_admin,
     }

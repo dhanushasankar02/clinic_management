@@ -20,7 +20,7 @@ class LabOrderViewSet(viewsets.ModelViewSet):
 
 
 # Frontend Views
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'LAB_TECH', 'DOCTOR', 'NURSE'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'LAB_TECH', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST', 'ACCOUNTANT'])
 def order_list(request):
     status_filter = request.GET.get('status', '')
     orders = LabOrder.objects.select_related('patient', 'doctor').prefetch_related('items__test').all()
@@ -134,7 +134,7 @@ def order_print_report(request, pk):
     })
 
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'LAB_TECH', 'DOCTOR', 'NURSE'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'LAB_TECH', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PHARMACIST', 'ACCOUNTANT'])
 def test_catalogue(request):
     tests = LabTest.objects.all()
     return render(request, 'laboratory/catalogue.html', {

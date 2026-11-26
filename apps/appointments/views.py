@@ -11,7 +11,7 @@ from apps.patients.models import Patient
 from apps.clinics.models import Clinic
 from apps.accounts.decorators import role_required
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'PHARMACIST', 'LAB_TECH', 'ACCOUNTANT'])
 def appointment_list(request):
     clinic = Clinic.objects.first()
     status_filter = request.GET.get('status', '')
@@ -20,6 +20,14 @@ def appointment_list(request):
     patient_id_param = request.GET.get('patient_id')
     new_patient_param = request.GET.get('new_patient') == '1'
     selected_patient = Patient.objects.filter(id=patient_id_param, clinic=clinic).first() if patient_id_param else None
+
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else None
+    current_doctor = getattr(request.user, 'doctor_profile', None) or Doctor.objects.filter(user=request.user).first()
+
+    # If logged in as Doctor and no specific doctor filter passed (and not explicitly requesting all), default to current doctor's appointments
+    if role == 'DOCTOR' and current_doctor and not doctor_filter and request.GET.get('all') != '1':
+        doctor_filter = str(current_doctor.id)
 
     appointments = Appointment.objects.filter(clinic=clinic).select_related('doctor', 'patient', 'doctor__specialty', 'consultation').prefetch_related('invoices')
 
@@ -162,21 +170,31 @@ def appointment_list(request):
         'selected_patient': selected_patient,
         'is_new_patient': new_patient_param,
         'can_view_billing': can_view_billing,
+        'current_doctor': current_doctor,
     })
 
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'RECEPTIONIST', 'DOCTOR', 'NURSE'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'RECEPTIONIST', 'DOCTOR', 'NURSE', 'PHARMACIST', 'LAB_TECH', 'ACCOUNTANT'])
 def queue_board(request):
     clinic = Clinic.objects.first()
     today = date.today()
     today_appts = Appointment.objects.filter(clinic=clinic, appointment_date=today).select_related('doctor', 'patient')
 
+    profile = getattr(request.user, 'profile', None)
+    role = profile.role if profile else ('SUPER_ADMIN' if request.user.is_superuser else 'STAFF')
+    current_doctor = getattr(request.user, 'doctor_profile', None) or Doctor.objects.filter(user=request.user).first()
+    doctor_filter = request.GET.get('doctor', '')
+
+    # If logged in as Doctor, automatically show ONLY appointments booked for this doctor
+    if role == 'DOCTOR' and current_doctor:
+        today_appts = today_appts.filter(doctor=current_doctor)
+    elif doctor_filter:
+        today_appts = today_appts.filter(doctor_id=doctor_filter)
+
     waiting_queue = today_appts.filter(status__in=['CHECKED_IN', 'WAITING']).order_by('check_in_time', 'appointment_time')
     in_consultation = today_appts.filter(status='IN_CONSULTATION')
     completed_today = today_appts.filter(status='COMPLETED').order_by('-updated_at')[:10]
 
-    profile = getattr(request.user, 'profile', None)
-    role = profile.role if profile else ('SUPER_ADMIN' if request.user.is_superuser else 'STAFF')
     can_view_billing = request.user.is_superuser or role in ['SUPER_ADMIN', 'CLINIC_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']
 
     return render(request, 'appointments/queue.html', {
@@ -186,6 +204,7 @@ def queue_board(request):
         'today': today,
         'clinic': clinic,
         'can_view_billing': can_view_billing,
+        'current_doctor': current_doctor if role == 'DOCTOR' else None,
     })
 
 

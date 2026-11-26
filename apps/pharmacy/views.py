@@ -24,7 +24,7 @@ class DispenseRecordViewSet(viewsets.ModelViewSet):
 
 
 # Frontend Views
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'LAB_TECH', 'ACCOUNTANT'])
 def pharmacy_dashboard(request):
     medicines = Medicine.objects.prefetch_related('batches').all()
     today = date.today()
@@ -46,7 +46,7 @@ def pharmacy_dashboard(request):
     })
 
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'LAB_TECH', 'ACCOUNTANT'])
 def medicine_list(request):
     query = request.GET.get('q', '').strip()
     medicines = Medicine.objects.prefetch_related('batches').all()
@@ -94,7 +94,7 @@ def batch_add(request, medicine_id=None):
     return render(request, 'pharmacy/batch_add.html', {'medicines': medicines})
 
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'RECEPTIONIST', 'DOCTOR'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'RECEPTIONIST', 'DOCTOR', 'NURSE'])
 def dispense_create(request):
     patients = Patient.objects.all()
     batches = MedicineBatch.objects.select_related('medicine').filter(
@@ -173,7 +173,7 @@ def dispense_create(request):
     })
 
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR', 'RECEPTIONIST', 'DOCTOR'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR', 'RECEPTIONIST', 'DOCTOR', 'NURSE', 'LAB_TECH', 'ACCOUNTANT'])
 def dispense_detail(request, pk):
     dispense = get_object_or_404(DispenseRecord.objects.select_related('patient', 'clinic').prefetch_related('items__batch__medicine'), pk=pk)
     return render(request, 'pharmacy/dispense_detail.html', {
@@ -182,7 +182,7 @@ def dispense_detail(request, pk):
     })
 
 
-@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR'])
+@role_required(['SUPER_ADMIN', 'CLINIC_ADMIN', 'PHARMACIST', 'INVENTORY_MGR', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'LAB_TECH', 'ACCOUNTANT'])
 def dispense_list(request):
     dispensations = DispenseRecord.objects.select_related('patient').prefetch_related('items__batch__medicine').order_by('-created_at')
     return render(request, 'pharmacy/dispense_list.html', {'dispensations': dispensations})
